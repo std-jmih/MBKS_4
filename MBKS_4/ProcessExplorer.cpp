@@ -140,6 +140,9 @@ int ProcessExplorer::GetThreads()
     WCHAR pszServerName[MAX_COMPUTERNAME_LENGTH];
     GetComputerNameW(pszServerName, &len);
 
+    PROCESS_MITIGATION_DEP_POLICY stDEP;
+    PROCESS_MITIGATION_ASLR_POLICY stASLR;
+
     for (int i = 0; i < vsThThreads.size(); i++)
     {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, vsThThreads[i].uiPID);
@@ -165,6 +168,33 @@ int ProcessExplorer::GetThreads()
             wcscpy_s(vsThThreads[i].wParentName, L"-");
         }
         //^^parents
+
+        // vv DEP/ASLR
+        if (GetProcessMitigationPolicy(hProcess, ProcessDEPPolicy, &stDEP, sizeof(stDEP))) // DEP
+        {
+            if (stDEP.Enable)
+            {
+                vsThThreads[i].iDEP = 1;
+            }
+            else
+            {
+                vsThThreads[i].iDEP = 0;
+            }
+        }
+        else
+        {
+            vsThThreads[i].iDEP = -1;
+        }
+
+        if (GetProcessMitigationPolicy(hProcess, ProcessASLRPolicy, &stASLR, sizeof(stASLR))) // ASLR
+        {
+            vsThThreads[i].stASLR = stASLR;
+        }
+        else
+        {
+            //vsThThreads[i].iASLR = -1;
+        }
+        // ^^ DEP/ASLR
 
         // vv parent SID
 
