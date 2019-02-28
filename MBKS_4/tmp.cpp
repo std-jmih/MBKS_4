@@ -16,12 +16,14 @@ void main()
         if (Class->vsThThreads[i].wName[0] != 52428)
         {
             wcout << 
-                L"Name:\t\t"         << Class->vsThThreads[i].wName                     << endl <<
-                L"Type:\t\t"         << ((Class->vsThThreads[i].bType) ? L"32" : L"64") << endl <<
-                L"PID:\t\t"          << Class->vsThThreads[i].uiPID                     << endl <<
-                L"Path:\t\t"         << Class->vsThThreads[i].wPath                     << endl <<
-                L"Parent\'s name:\t" << Class->vsThThreads[i].wParentName               << endl <<
-                L"Parent\'s PID:\t"  << Class->vsThThreads[i].uiParentPID               << endl <<
+                L"Name:\t\t\t"         << Class->vsThThreads[i].wName                     << endl <<
+                L"Type:\t\t\t"         << ((Class->vsThThreads[i].bType) ? L"32" : L"64") << endl <<
+                L"PID:\t\t\t"          << Class->vsThThreads[i].uiPID                     << endl <<
+                L"Path:\t\t\t"         << Class->vsThThreads[i].wPath                     << endl <<
+                L"Parent user name:\t" << Class->vsThThreads[i].wParentUserName           << endl <<
+                L"Parent user SID:\t"  << Class->vsThThreads[i].wParentUserSID            << endl <<
+                L"Parent proc name:\t" << Class->vsThThreads[i].wParentName               << endl <<
+                L"Parent proc PID:\t"  << Class->vsThThreads[i].uiParentPID               << endl <<
                 endl;
         }
     }
