@@ -10,7 +10,6 @@ ProcessExplorer::ProcessExplorer()
     setlocale(LC_CTYPE, ".866");
 }
 
-
 ProcessExplorer::~ProcessExplorer()
 {
     //CLEANUP
