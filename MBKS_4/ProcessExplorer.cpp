@@ -188,11 +188,48 @@ int ProcessExplorer::GetThreads()
 
         if (GetProcessMitigationPolicy(hProcess, ProcessASLRPolicy, &stASLR, sizeof(stASLR))) // ASLR
         {
-            vsThThreads[i].stASLR = stASLR;
+            if (stASLR.EnableBottomUpRandomization)
+            {
+                vsThThreads[i].iEnableBottomUpRandomization = 1;
+            }
+            else
+            {
+                vsThThreads[i].iEnableBottomUpRandomization = 0;
+            }
+
+            if (stASLR.EnableForceRelocateImages)
+            {
+                vsThThreads[i].iEnableForceRelocateImages = 1;
+            }
+            else
+            {
+                vsThThreads[i].iEnableForceRelocateImages = 0;
+            }
+
+            if (stASLR.EnableHighEntropy)
+            {
+                vsThThreads[i].iEnableHighEntropy = 1;
+            }
+            else
+            {
+                vsThThreads[i].iEnableHighEntropy = 0;
+            }
+
+            if (stASLR.DisallowStrippedImages)
+            {
+                vsThThreads[i].iDisallowStrippedImages = 1;
+            }
+            else
+            {
+                vsThThreads[i].iDisallowStrippedImages = 0;
+            }
         }
         else
         {
-            //vsThThreads[i].iASLR = -1;
+            vsThThreads[i].iEnableBottomUpRandomization = -1;
+            vsThThreads[i].iEnableForceRelocateImages   = -1;
+            vsThThreads[i].iEnableHighEntropy           = -1;
+            vsThThreads[i].iDisallowStrippedImages      = -1;
         }
         // ^^ DEP/ASLR
 
