@@ -10,9 +10,15 @@ ProcessExplorer::ProcessExplorer()
     setlocale(LC_CTYPE, ".866");
 }
 
-
 ProcessExplorer::~ProcessExplorer()
 {
+    //CLEANUP
+    for (int k = 0; k < vsThThreads.size(); k++)
+    {
+        vsThThreads[k].vwDLL.clear();
+        vsThThreads[k].vwPrivileges.clear();
+    }
+    vsThThreads.clear();
 }
 
 PSID GetSid(LPWSTR wUsername)
@@ -85,40 +91,104 @@ int GetIntegrityLevel(HANDLE Token)
     }
 }
 
-//int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<wstring> *vwPrivileges)
-//{
-//    DWORD nlen;
-//    TOKEN_PRIVILEGES *pRez = NULL;
-//    WCHAR wPrivilege[32];
-//    DWORD dBufLen = 32;
-//
-//    GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
-//    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-//    {
-//        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
-//    }
-//    else
-//    {
-//        return -1;
-//    }
-//
-//    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
-//    {
-//        delete[] pRez;
-//        return -1;
-//    }
-//    else
-//    {
-//        for (int i = 0; i < pRez->PrivilegeCount; i++)
-//        {
-//            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
-//            vwPrivileges->push_back(wPrivilege);
-//        }
-//
-//        delete[] pRez;
-//        return 0;
-//    }
-//}
+vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last)
+{
+    if (first == last)
+    {
+        return last;
+    }
+    vector<stPriv>::iterator result = first;
+    while (++first != last)
+    {
+        if (!(result->wName == first->wName))
+        {
+            *(++result) = *first;
+        }
+    }
+    return ++result;
+}
+
+int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges)
+{
+    DWORD nlen;
+    TOKEN_PRIVILEGES *pRez = NULL;
+    WCHAR wPrivilege[32];
+    DWORD dBufLen = 32;
+    stPriv stPrTmp;
+
+    GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
+    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+    {
+        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
+    }
+    else
+    {
+        return -1;
+    }
+
+    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
+    {
+        delete[] pRez;
+        return -1;
+    }
+    else
+    {
+        for (unsigned int i = 0; i < pRez->PrivilegeCount; i++)
+        {
+            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
+
+            stPrTmp.wName = wPrivilege;
+
+            if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_ENABLED) == SE_PRIVILEGE_ENABLED)
+            {
+                stPrTmp.bEnabled = true;
+            }
+            else
+            {
+                stPrTmp.bEnabled = false;
+            }
+
+            if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_ENABLED_BY_DEFAULT) == SE_PRIVILEGE_ENABLED_BY_DEFAULT)
+            {
+                stPrTmp.bEnabledByDefault = true;
+            }
+            else
+            {
+                stPrTmp.bEnabledByDefault = false;
+            }
+
+            if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_USED_FOR_ACCESS) == SE_PRIVILEGE_USED_FOR_ACCESS)
+            {
+                stPrTmp.bUsedForAccess = true;
+            }
+            else
+            {
+                stPrTmp.bUsedForAccess = false;
+            }
+
+            //if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_REMOVED) == SE_PRIVILEGE_REMOVED)
+            //{
+            //    wcout << L"SE_PRIVILEGE_REMOVED" << endl;
+            //    stPrTmp.bRemoved = true;
+            //}
+            //else
+            //{
+            //    stPrTmp.bRemoved = false;
+            //}
+
+            vwPrivileges->push_back(stPrTmp);
+        }
+
+        delete[] pRez;
+
+        //vv privileges fix
+        vector<stPriv>::iterator iter = unique((*vwPrivileges).begin(), (*vwPrivileges).end());
+        (*vwPrivileges).erase(iter, (*vwPrivileges).end());
+        //^^ privileges fix
+
+        return 0;
+    }
+}
 
 int ProcessExplorer::GetThreads()
 {
@@ -315,7 +385,7 @@ int ProcessExplorer::GetThreads()
 
         vsThThreads[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
 
-        //GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
+        GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
 
         //get the SID of the token
         ptu = (TOKEN_USER *)tubuf;
