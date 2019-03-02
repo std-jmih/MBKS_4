@@ -85,7 +85,7 @@ int ProcessExplorer::GetThreads()
     }
 
     processEntry.dwSize = sizeof(PROCESSENTRY32W);
-    moduleEntry.dwSize = sizeof(MODULEENTRY32W);
+    moduleEntry.dwSize  = sizeof(MODULEENTRY32W);
 
     if (!Process32FirstW(processSnapshot, &processEntry))
     {
@@ -93,32 +93,49 @@ int ProcessExplorer::GetThreads()
     }
 
 
+    //CLEANUP
+    for (int k = 0; k < vsThThreads.size(); k++)
+    {
+        vsThThreads[k].vwDLL.clear();
+    }
     vsThThreads.clear();
+
+
     sThread tmp;
     int i = 0;
-
-    do // Now walk the snapshot of processes, and display information about each process in turn
+    do // Walk the snapshot of processes
     {
-        vsThThreads.push_back(tmp);                                    //PROCESSENTRY32
+        vsThThreads.push_back(tmp);
+
         vsThThreads[i].uiPID = processEntry.th32ProcessID;             //PROCESSENTRY32
         wcscpy_s(vsThThreads[i].wName, processEntry.szExeFile);        //PROCESSENTRY32
         vsThThreads[i].uiParentPID = processEntry.th32ParentProcessID; //PROCESSENTRY32
 
         moduleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processEntry.th32ProcessID);
-        if (!Module32FirstW(moduleSnapshot, &moduleEntry))
+        if (!Module32FirstW(moduleSnapshot, &moduleEntry))             //MODULEENTRY32
         {
-            wcscpy_s(vsThThreads[i].wPath, L"-");                      //MODULEENTRY32
+            wcscpy_s(vsThThreads[i].wPath, L"-");                      
         }
         else
         {
-            wcscpy_s(vsThThreads[i].wPath, moduleEntry.szExePath);     //MODULEENTRY32
+            wcscpy_s(vsThThreads[i].wPath, moduleEntry.szExePath);
+            
+            //vv DLLs
+            while (Module32NextW(moduleSnapshot, &moduleEntry))
+            {
+                vsThThreads[i].vwDLL.push_back(moduleEntry.szModule);
+            }
+            //^^ DLLs
         }
+
         i++;
     } while (Process32NextW(processSnapshot, &processEntry));
 
     CloseHandle(processSnapshot);
 
-    // Parent processes' names; 32/64
+
+    // Parent processes' names, SIDs; 32/64; DEP/ASLR
+    
     bool flag;
 
     HANDLE hProcess;
@@ -130,12 +147,8 @@ int ProcessExplorer::GetThreads()
     WCHAR name[512], dom[512], tubuf[512], *pret = 0;
     int iUse;
 
-    SID sSID;
     LPWSTR pSID = NULL;
-    DWORD cbSid;
-    WCHAR DomainName[512];
     DWORD dSize = 512;
-    SID_NAME_USE pe;
     DWORD len = MAX_COMPUTERNAME_LENGTH;
     WCHAR pszServerName[MAX_COMPUTERNAME_LENGTH];
     GetComputerNameW(pszServerName, &len);
@@ -146,7 +159,7 @@ int ProcessExplorer::GetThreads()
     for (int i = 0; i < vsThThreads.size(); i++)
     {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, vsThThreads[i].uiPID);
-
+        
         //vv 32/64
         IsWow64Process(hProcess, &bRez);
         vsThThreads[i].bType = bRez;
@@ -167,9 +180,9 @@ int ProcessExplorer::GetThreads()
         {
             wcscpy_s(vsThThreads[i].wParentName, L"-");
         }
-        //^^parents
+        //^^ parents
 
-        // vv DEP/ASLR
+        //vv DEP/ASLR
         if (GetProcessMitigationPolicy(hProcess, ProcessDEPPolicy, &stDEP, sizeof(stDEP))) // DEP
         {
             if (stDEP.Enable)
@@ -231,9 +244,9 @@ int ProcessExplorer::GetThreads()
             vsThThreads[i].iEnableHighEntropy           = -1;
             vsThThreads[i].iDisallowStrippedImages      = -1;
         }
-        // ^^ DEP/ASLR
+        //^^ DEP/ASLR
 
-        // vv parent SID
+        //vv parent SID
 
         if (!OpenProcessToken(hProcess, TOKEN_QUERY, &tok))
         {
@@ -265,7 +278,7 @@ int ProcessExplorer::GetThreads()
 
         wcscpy_s(vsThThreads[i].wParentUserSID, pSID);
         wcscpy_s(vsThThreads[i].wParentUserName, name);
-        // ^^ parent SID
+        //^^ parent SID
     }
 
     return 0;

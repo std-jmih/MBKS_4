@@ -5,7 +5,7 @@
 
 using namespace std;
 
-typedef struct sThread
+struct sThread
 {
     WCHAR           wName[MAX_PATH];        /// delo sdelano
 	DWORD           uiPID;                  /// delo sdelano
