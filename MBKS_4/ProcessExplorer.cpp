@@ -3,7 +3,7 @@
 #include <tlhelp32.h>
 #include <string.h>
 #include <sddl.h>
-
+#include <iostream>
 
 ProcessExplorer::ProcessExplorer()
 {
@@ -66,6 +66,60 @@ PSID GetSid(LPWSTR wUsername)
     return lpSID;
 }
 
+int GetIntegrityLevel(HANDLE Token)
+{
+    DWORD nlen;
+    DWORD SidSubAuthority;
+    TOKEN_MANDATORY_LABEL *pRez;
+    char buf[28];
+    pRez = (TOKEN_MANDATORY_LABEL *)buf;
+    
+    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, pRez, 28, &nlen))
+    {
+        return -1;
+    }
+    else
+    {
+        SidSubAuthority = *GetSidSubAuthority(pRez->Label.Sid, 0);
+        return SidSubAuthority;
+    }
+}
+
+//int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<wstring> *vwPrivileges)
+//{
+//    DWORD nlen;
+//    TOKEN_PRIVILEGES *pRez = NULL;
+//    WCHAR wPrivilege[32];
+//    DWORD dBufLen = 32;
+//
+//    GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
+//    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+//    {
+//        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
+//    }
+//    else
+//    {
+//        return -1;
+//    }
+//
+//    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
+//    {
+//        delete[] pRez;
+//        return -1;
+//    }
+//    else
+//    {
+//        for (int i = 0; i < pRez->PrivilegeCount; i++)
+//        {
+//            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
+//            vwPrivileges->push_back(wPrivilege);
+//        }
+//
+//        delete[] pRez;
+//        return 0;
+//    }
+//}
+
 int ProcessExplorer::GetThreads()
 {
     HANDLE processSnapshot;
@@ -97,6 +151,7 @@ int ProcessExplorer::GetThreads()
     for (int k = 0; k < vsThThreads.size(); k++)
     {
         vsThThreads[k].vwDLL.clear();
+        vsThThreads[k].vwPrivileges.clear();
     }
     vsThThreads.clear();
 
@@ -148,9 +203,10 @@ int ProcessExplorer::GetThreads()
     int iUse;
 
     LPWSTR pSID = NULL;
-    DWORD dSize = 512;
-    DWORD len = MAX_COMPUTERNAME_LENGTH;
-    WCHAR pszServerName[MAX_COMPUTERNAME_LENGTH];
+    PSID   lpSID = NULL;
+    DWORD  dSize = 512;
+    DWORD  len = MAX_COMPUTERNAME_LENGTH;
+    WCHAR  pszServerName[MAX_COMPUTERNAME_LENGTH];
     GetComputerNameW(pszServerName, &len);
 
     PROCESS_MITIGATION_DEP_POLICY stDEP;
@@ -158,7 +214,7 @@ int ProcessExplorer::GetThreads()
 
     for (int i = 0; i < vsThThreads.size(); i++)
     {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, vsThThreads[i].uiPID);
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, vsThThreads[i].uiPID);
         
         //vv 32/64
         IsWow64Process(hProcess, &bRez);
@@ -246,18 +302,24 @@ int ProcessExplorer::GetThreads()
         }
         //^^ DEP/ASLR
 
-        //vv parent SID
+        //vv integrity level; privileges; parent SID
 
         if (!OpenProcessToken(hProcess, TOKEN_QUERY, &tok))
         {
+            vsThThreads[i].iIntegrityLevel = -1; // <- integrity level
+
             wcscpy_s(vsThThreads[i].wParentUserSID, L"-");
             wcscpy_s(vsThThreads[i].wParentUserName, L"-");
             continue;
         }
 
+        vsThThreads[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
+
+        //GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
+
         //get the SID of the token
         ptu = (TOKEN_USER *)tubuf;
-        if (!GetTokenInformation(tok, (TOKEN_INFORMATION_CLASS)1, ptu, 300, &nlen))
+        if (!GetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenUser, ptu, 300, &nlen))
         {
             wcscpy_s(vsThThreads[i].wParentUserSID, L"-");
             wcscpy_s(vsThThreads[i].wParentUserName, L"-");
@@ -274,11 +336,14 @@ int ProcessExplorer::GetThreads()
             continue;
         }
 
-        ConvertSidToStringSidW(GetSid(name), &pSID);
+        lpSID = GetSid(name);
+        ConvertSidToStringSidW(lpSID, &pSID);
+        delete[] lpSID;
+        lpSID = NULL;
 
         wcscpy_s(vsThThreads[i].wParentUserSID, pSID);
         wcscpy_s(vsThThreads[i].wParentUserName, name);
-        //^^ parent SID
+        //^^ integrity level; privileges; parent SID
     }
 
     return 0;

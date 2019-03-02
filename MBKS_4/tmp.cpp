@@ -22,18 +22,21 @@ int main()
             L"Parent user SID:\t"  <<   Class->vsThThreads[i].wParentUserSID             << endl <<
             L"Parent proc name:\t" <<   Class->vsThThreads[i].wParentName                << endl <<
             L"Parent proc PID:\t"  <<   Class->vsThThreads[i].uiParentPID                << endl <<
+            L"Integrity level:\t"  <<   Class->vsThThreads[i].iIntegrityLevel            << endl <<
             L"DEP:\t\t\t"          <<   Class->vsThThreads[i].iDEP                       << endl <<
             L"ASLR: (-1 - error, 0 - disabled, 1 - enabled)"                                                          << endl <<
                 L"\tBottom-up ASLR:                        "   << Class->vsThThreads[i].iEnableBottomUpRandomization << endl <<
                 L"\tForced ASLR:                           "   << Class->vsThThreads[i].iEnableForceRelocateImages   << endl <<
                 L"\tHigh enthropy:                         "   << Class->vsThThreads[i].iEnableHighEntropy           << endl <<
                 L"\tForced ASLR with Required Relocations: "   << Class->vsThThreads[i].iDisallowStrippedImages      << endl;
-        wcout << L"DLLs:" << endl;
-        for (int k = 0; k < Class->vsThThreads[i].vwDLL.size(); k++)
-        {
-            wcout << L"\t" << Class->vsThThreads[i].vwDLL[k] << endl;
-        }
+        //wcout << L"DLLs:" << endl;
+        //for (int k = 0; k < Class->vsThThreads[i].vwDLL.size(); k++)
+        //{
+        //    wcout << L"\t" << Class->vsThThreads[i].vwDLL[k] << endl;
+        //}
         wcout << endl << endl;
+
+        //system("pause");
     }
     while (1) {}
     return 0;
