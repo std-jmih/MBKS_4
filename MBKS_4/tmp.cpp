@@ -29,15 +29,39 @@ int main()
                 L"\tForced ASLR:                           "   << Class->vsThThreads[i].iEnableForceRelocateImages   << endl <<
                 L"\tHigh enthropy:                         "   << Class->vsThThreads[i].iEnableHighEntropy           << endl <<
                 L"\tForced ASLR with Required Relocations: "   << Class->vsThThreads[i].iDisallowStrippedImages      << endl;
-        //wcout << L"DLLs:" << endl;
-        //for (int k = 0; k < Class->vsThThreads[i].vwDLL.size(); k++)
-        //{
-        //    wcout << L"\t" << Class->vsThThreads[i].vwDLL[k] << endl;
-        //}
+        wcout << L"DLLs:" << endl;
+        for (int k = 0; k < Class->vsThThreads[i].vwDLL.size(); k++)
+        {
+            wcout << L"\t" << Class->vsThThreads[i].vwDLL[k] << endl;
+        }
+        wcout << L"Privileges:" << endl;
+        for (int k = 0; k < Class->vsThThreads[i].vwPrivileges.size(); k++)
+        {
+            if (Class->vsThThreads[i].vwPrivileges[k].bEnabled          ||
+                Class->vsThThreads[i].vwPrivileges[k].bEnabledByDefault ||
+                Class->vsThThreads[i].vwPrivileges[k].bUsedForAccess)
+            {
+                wcout << Class->vsThThreads[i].vwPrivileges[k].wName << endl << L"\t";
+                if (Class->vsThThreads[i].vwPrivileges[k].bEnabled)
+                {
+                    wcout << L"Enabled  ";
+                }
+                if (Class->vsThThreads[i].vwPrivileges[k].bEnabledByDefault)
+                {
+                    wcout << L"EnabledByDefault  ";
+                }
+                if (Class->vsThThreads[i].vwPrivileges[k].bUsedForAccess)
+                {
+                    wcout << L"UsedForAccess  ";
+                }
+                wcout << endl;
+            }
+        }
         wcout << endl << endl;
 
-        //system("pause");
+        system("pause");
     }
-    while (1) {}
+    delete Class;
+    system("pause");
     return 0;
 }
