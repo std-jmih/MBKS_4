@@ -85,40 +85,40 @@ int GetIntegrityLevel(HANDLE Token)
     }
 }
 
-//int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<wstring> *vwPrivileges)
-//{
-//    DWORD nlen;
-//    TOKEN_PRIVILEGES *pRez = NULL;
-//    WCHAR wPrivilege[32];
-//    DWORD dBufLen = 32;
-//
-//    GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
-//    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-//    {
-//        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
-//    }
-//    else
-//    {
-//        return -1;
-//    }
-//
-//    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
-//    {
-//        delete[] pRez;
-//        return -1;
-//    }
-//    else
-//    {
-//        for (int i = 0; i < pRez->PrivilegeCount; i++)
-//        {
-//            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
-//            vwPrivileges->push_back(wPrivilege);
-//        }
-//
-//        delete[] pRez;
-//        return 0;
-//    }
-//}
+int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<wstring> *vwPrivileges)
+{
+    DWORD nlen;
+    TOKEN_PRIVILEGES *pRez = NULL;
+    WCHAR wPrivilege[32];
+    DWORD dBufLen = 32;
+
+    GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
+    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+    {
+        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
+    }
+    else
+    {
+        return -1;
+    }
+
+    if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
+    {
+        delete[] pRez;
+        return -1;
+    }
+    else
+    {
+        for (int i = 0; i < pRez->PrivilegeCount; i++)
+        {
+            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
+            vwPrivileges->push_back(wPrivilege);
+        }
+
+        delete[] pRez;
+        return 0;
+    }
+}
 
 int ProcessExplorer::GetThreads()
 {
@@ -315,7 +315,7 @@ int ProcessExplorer::GetThreads()
 
         vsThThreads[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
 
-        //GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
+        GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
 
         //get the SID of the token
         ptu = (TOKEN_USER *)tubuf;
