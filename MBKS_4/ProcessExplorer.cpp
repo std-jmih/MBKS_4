@@ -1,6 +1,4 @@
 #include "ProcessExplorer.h"
-#include <psapi.h>
-#include <tlhelp32.h>
 #include <string.h>
 #include <sddl.h>
 #include <iostream>
@@ -12,13 +10,6 @@ ProcessExplorer::ProcessExplorer()
 
 ProcessExplorer::~ProcessExplorer()
 {
-    //CLEANUP
-    for (int k = 0; k < vsThThreads.size(); k++)
-    {
-        vsThThreads[k].vwDLL.clear();
-        vsThThreads[k].vwPrivileges.clear();
-    }
-    vsThThreads.clear();
 }
 
 PSID GetSid(LPWSTR wUsername)
@@ -190,7 +181,7 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
     }
 }
 
-int ProcessExplorer::GetThreads()
+int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 {
     HANDLE processSnapshot;
     HANDLE moduleSnapshot;
@@ -209,46 +200,36 @@ int ProcessExplorer::GetThreads()
     }
 
     processEntry.dwSize = sizeof(PROCESSENTRY32W);
-    moduleEntry.dwSize  = sizeof(MODULEENTRY32W);
+    moduleEntry.dwSize = sizeof(MODULEENTRY32W);
 
     if (!Process32FirstW(processSnapshot, &processEntry))
     {
         return -1;
     }
 
-
-    //CLEANUP
-    for (int k = 0; k < vsThThreads.size(); k++)
-    {
-        vsThThreads[k].vwDLL.clear();
-        vsThThreads[k].vwPrivileges.clear();
-    }
-    vsThThreads.clear();
-
-
     sThread tmp;
     int i = 0;
     do // Walk the snapshot of processes
     {
-        vsThThreads.push_back(tmp);
+        (*vsThThreads).push_back(tmp);
 
-        vsThThreads[i].uiPID = processEntry.th32ProcessID;             //PROCESSENTRY32
-        wcscpy_s(vsThThreads[i].wName, processEntry.szExeFile);        //PROCESSENTRY32
-        vsThThreads[i].uiParentPID = processEntry.th32ParentProcessID; //PROCESSENTRY32
+        (*vsThThreads)[i].uiPID = processEntry.th32ProcessID;             //PROCESSENTRY32
+        wcscpy_s((*vsThThreads)[i].wName, processEntry.szExeFile);        //PROCESSENTRY32
+        (*vsThThreads)[i].uiParentPID = processEntry.th32ParentProcessID; //PROCESSENTRY32
 
         moduleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processEntry.th32ProcessID);
         if (!Module32FirstW(moduleSnapshot, &moduleEntry))             //MODULEENTRY32
         {
-            wcscpy_s(vsThThreads[i].wPath, L"-");                      
+            wcscpy_s((*vsThThreads)[i].wPath, L"-");
         }
         else
         {
-            wcscpy_s(vsThThreads[i].wPath, moduleEntry.szExePath);
-            
+            wcscpy_s((*vsThThreads)[i].wPath, moduleEntry.szExePath);
+
             //vv DLLs
             while (Module32NextW(moduleSnapshot, &moduleEntry))
             {
-                vsThThreads[i].vwDLL.push_back(moduleEntry.szModule);
+                (*vsThThreads)[i].vwDLL.push_back(moduleEntry.szModule);
             }
             //^^ DLLs
         }
@@ -258,9 +239,8 @@ int ProcessExplorer::GetThreads()
 
     CloseHandle(processSnapshot);
 
-
     // Parent processes' names, SIDs; 32/64; DEP/ASLR
-    
+
     bool flag;
 
     HANDLE hProcess;
@@ -282,29 +262,29 @@ int ProcessExplorer::GetThreads()
     PROCESS_MITIGATION_DEP_POLICY stDEP;
     PROCESS_MITIGATION_ASLR_POLICY stASLR;
 
-    for (int i = 0; i < vsThThreads.size(); i++)
+    for (int i = 0; i < (*vsThThreads).size(); i++)
     {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, vsThThreads[i].uiPID);
-        
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (*vsThThreads)[i].uiPID);
+
         //vv 32/64
         IsWow64Process(hProcess, &bRez);
-        vsThThreads[i].bType = bRez;
+        (*vsThThreads)[i].bType = bRez;
         //^^ 32/64
 
         //vv parents
         flag = false;
-        for (int j = 0; j < vsThThreads.size(); j++)
+        for (int j = 0; j < (*vsThThreads).size(); j++)
         {
-            if (vsThThreads[j].uiPID == vsThThreads[i].uiParentPID)
+            if ((*vsThThreads)[j].uiPID == (*vsThThreads)[i].uiParentPID)
             {
-                wcscpy_s(vsThThreads[i].wParentName, vsThThreads[j].wName);
+                wcscpy_s((*vsThThreads)[i].wParentName, (*vsThThreads)[j].wName);
                 flag = true;
                 break;
             }
         }
         if (!flag)
         {
-            wcscpy_s(vsThThreads[i].wParentName, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentName, L"-");
         }
         //^^ parents
 
@@ -313,62 +293,62 @@ int ProcessExplorer::GetThreads()
         {
             if (stDEP.Enable)
             {
-                vsThThreads[i].iDEP = 1;
+                (*vsThThreads)[i].iDEP = 1;
             }
             else
             {
-                vsThThreads[i].iDEP = 0;
+                (*vsThThreads)[i].iDEP = 0;
             }
         }
         else
         {
-            vsThThreads[i].iDEP = -1;
+            (*vsThThreads)[i].iDEP = -1;
         }
 
         if (GetProcessMitigationPolicy(hProcess, ProcessASLRPolicy, &stASLR, sizeof(stASLR))) // ASLR
         {
             if (stASLR.EnableBottomUpRandomization)
             {
-                vsThThreads[i].iEnableBottomUpRandomization = 1;
+                (*vsThThreads)[i].iEnableBottomUpRandomization = 1;
             }
             else
             {
-                vsThThreads[i].iEnableBottomUpRandomization = 0;
+                (*vsThThreads)[i].iEnableBottomUpRandomization = 0;
             }
 
             if (stASLR.EnableForceRelocateImages)
             {
-                vsThThreads[i].iEnableForceRelocateImages = 1;
+                (*vsThThreads)[i].iEnableForceRelocateImages = 1;
             }
             else
             {
-                vsThThreads[i].iEnableForceRelocateImages = 0;
+                (*vsThThreads)[i].iEnableForceRelocateImages = 0;
             }
 
             if (stASLR.EnableHighEntropy)
             {
-                vsThThreads[i].iEnableHighEntropy = 1;
+                (*vsThThreads)[i].iEnableHighEntropy = 1;
             }
             else
             {
-                vsThThreads[i].iEnableHighEntropy = 0;
+                (*vsThThreads)[i].iEnableHighEntropy = 0;
             }
 
             if (stASLR.DisallowStrippedImages)
             {
-                vsThThreads[i].iDisallowStrippedImages = 1;
+                (*vsThThreads)[i].iDisallowStrippedImages = 1;
             }
             else
             {
-                vsThThreads[i].iDisallowStrippedImages = 0;
+                (*vsThThreads)[i].iDisallowStrippedImages = 0;
             }
         }
         else
         {
-            vsThThreads[i].iEnableBottomUpRandomization = -1;
-            vsThThreads[i].iEnableForceRelocateImages   = -1;
-            vsThThreads[i].iEnableHighEntropy           = -1;
-            vsThThreads[i].iDisallowStrippedImages      = -1;
+            (*vsThThreads)[i].iEnableBottomUpRandomization = -1;
+            (*vsThThreads)[i].iEnableForceRelocateImages = -1;
+            (*vsThThreads)[i].iEnableHighEntropy = -1;
+            (*vsThThreads)[i].iDisallowStrippedImages = -1;
         }
         //^^ DEP/ASLR
 
@@ -376,23 +356,23 @@ int ProcessExplorer::GetThreads()
 
         if (!OpenProcessToken(hProcess, TOKEN_QUERY, &tok))
         {
-            vsThThreads[i].iIntegrityLevel = -1; // <- integrity level
+            (*vsThThreads)[i].iIntegrityLevel = -1; // <- integrity level
 
-            wcscpy_s(vsThThreads[i].wParentUserSID, L"-");
-            wcscpy_s(vsThThreads[i].wParentUserName, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserSID, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserName, L"-");
             continue;
         }
 
-        vsThThreads[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
+        (*vsThThreads)[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
 
-        GetPrivileges(tok, pszServerName, &vsThThreads[i].vwPrivileges); // <- privileges
+        GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges); // <- privileges
 
         //get the SID of the token
         ptu = (TOKEN_USER *)tubuf;
         if (!GetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenUser, ptu, 300, &nlen))
         {
-            wcscpy_s(vsThThreads[i].wParentUserSID, L"-");
-            wcscpy_s(vsThThreads[i].wParentUserName, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserSID, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserName, L"-");
             continue;
         }
 
@@ -401,8 +381,8 @@ int ProcessExplorer::GetThreads()
         nlen = 512;
         if (!LookupAccountSidW(0, ptu->User.Sid, name, &nlen, dom, &dlen, (PSID_NAME_USE)&iUse))
         {
-            wcscpy_s(vsThThreads[i].wParentUserSID, L"-");
-            wcscpy_s(vsThThreads[i].wParentUserName, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserSID, L"-");
+            wcscpy_s((*vsThThreads)[i].wParentUserName, L"-");
             continue;
         }
 
@@ -411,8 +391,8 @@ int ProcessExplorer::GetThreads()
         delete[] lpSID;
         lpSID = NULL;
 
-        wcscpy_s(vsThThreads[i].wParentUserSID, pSID);
-        wcscpy_s(vsThThreads[i].wParentUserName, name);
+        wcscpy_s((*vsThThreads)[i].wParentUserSID, pSID);
+        wcscpy_s((*vsThThreads)[i].wParentUserName, name);
         //^^ integrity level; privileges; parent SID
     }
 

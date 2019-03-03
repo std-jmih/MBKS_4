@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 #include <Windows.h>
+#include <psapi.h>
+#include <tlhelp32.h>
 
 using namespace std;
 
@@ -52,9 +54,6 @@ public:
     ProcessExplorer();
     ~ProcessExplorer();
 
-    int GetThreads();
 
-    vector<sThread> vsThThreads;
-
+    int GetThreads(vector<sThread> *vsThThreads);
 };
-
