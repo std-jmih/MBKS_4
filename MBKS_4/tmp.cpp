@@ -1,4 +1,5 @@
 #include "ProcessExplorer.h"
+#include "FilesExplorer.h"
 #include <Windows.h>
 #include <iostream>
 #include <psapi.h>
@@ -8,16 +9,20 @@ using namespace std;
 
 int main()
 {
-    ProcessExplorer *Class = new ProcessExplorer;
+    ProcessExplorer *ClassProc = new ProcessExplorer;
+    FilesExplorer   *ClassFile = new FilesExplorer;
 
-    vector<stACE> vACL;
-    Class->GetACL(&vACL, "C:\\Recovery.txt");
-    system("pause");
-    vACL.clear();
+    WCHAR wRez[512];
+    ClassFile->GetFileOwner(wRez, L"C:\\Users\\Public\\Projects\\test.txt");
+    wcout << wRez;
+    //vector<stACE> vACL;
+    //Class->GetACL(&vACL, "C:\\Recovery.txt");
+    //system("pause");
+    //vACL.clear();
 
     vector<sThread> vThreads;
-    Class->GetThreads(&vThreads);
-    int N = vThreads.size();
+    ClassProc->GetThreads(&vThreads);
+    int N = (int)vThreads.size();
     for (int i = 0; i < N; i++)
     {
         wcout << 
@@ -68,7 +73,7 @@ int main()
 
         system("pause");
     }
-    delete Class;
+    delete ClassProc;
     system("pause");
     return 0;
 }

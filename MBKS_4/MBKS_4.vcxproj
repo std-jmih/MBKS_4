@@ -116,9 +116,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FilesExplorer.h" />
     <ClInclude Include="ProcessExplorer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FilesExplorer.cpp" />
     <ClCompile Include="ProcessExplorer.cpp" />
     <ClCompile Include="tmp.cpp" />
   </ItemGroup>
