@@ -480,60 +480,43 @@ int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegri
     return 0;
 }
 
-int ProcessExplorer::SetProcessPrivilege(sThread *sProcess, WCHAR *wPrivilege, bool bAdd)
+bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv, bool bAdd)
 {
-    HANDLE hToken = 0;
+    HANDLE hTok = 0;
+    bool retval = false;
+    PTOKEN_PRIVILEGES pOldPrivs = NULL;
 
-    if (!OpenProcessToken(sProcess->hProcessHandle, TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &hToken))
-    {
-        return -1;
-    }
+    size_t sz = sizeof(TOKEN_PRIVILEGES);
 
-    TOKEN_PRIVILEGES tp;
-    LUID luid;
+    // memory
+    PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
+    DWORD RetLen, *pRetLen = NULL;
 
-    if (!LookupPrivilegeValueW(
-        NULL,       // lookup privilege on local system
-        wPrivilege, // privilege to lookup 
-        &luid))     // receives LUID of privilege
-    {
-        printf("LookupPrivilegeValue error: %u\n", GetLastError());
-        return GetLastError();
-    }
-        
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Luid = luid;
+    // fill in buffer
+    pPriv->PrivilegeCount = 1;
     if (bAdd)
     {
-        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+        pPriv->Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     }
     else
     {
-        tp.Privileges[0].Attributes = 0;
+        pPriv->Privileges[0].Attributes = 0;
     }
 
-    // Enable the privilege or disable all privileges.
-
-    if (!AdjustTokenPrivileges(
-        hToken,
-        FALSE,
-        &tp,
-        sizeof(TOKEN_PRIVILEGES),
-        (PTOKEN_PRIVILEGES)NULL,
-        (PDWORD)NULL))
+    if (!LookupPrivilegeValueW(NULL, wPriv, &pPriv->Privileges[0].Luid))
     {
-        printf("AdjustTokenPrivileges error: %u\n", GetLastError());
-        return GetLastError();
+        return false;
     }
 
-    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
-
+    // change priv
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hTok))
     {
-        printf("The token does not have the specified privilege. \n");
-        return GetLastError();
+        return false;
     }
 
-    return 0;
+    retval = (bool)AdjustTokenPrivileges(hTok, FALSE, pPriv, sz, pOldPrivs, pRetLen);
+
+    return retval;
 }
 
 void ProcessExplorer::Cleanup(vector<sThread> *vsThThreads)
