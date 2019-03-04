@@ -61,5 +61,7 @@ public:
 
     int SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegrityLevel);
 
+    int SetProcessPrivilege(sThread *sProcess, WCHAR *wPrivilege, bool bAdd); // bool bAdd: true - add, false - delete privilege
+
     void Cleanup(vector<sThread> *vsThThreads);
 };

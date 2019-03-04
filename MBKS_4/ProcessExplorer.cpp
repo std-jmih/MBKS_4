@@ -181,7 +181,6 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
     }
 }
 
-
 int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 {
     Cleanup(vsThThreads);
@@ -478,6 +477,62 @@ int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegri
     SetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize);
 
     free(sLabel);
+    return 0;
+}
+
+int ProcessExplorer::SetProcessPrivilege(sThread *sProcess, WCHAR *wPrivilege, bool bAdd)
+{
+    HANDLE hToken = 0;
+
+    if (!OpenProcessToken(sProcess->hProcessHandle, TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &hToken))
+    {
+        return -1;
+    }
+
+    TOKEN_PRIVILEGES tp;
+    LUID luid;
+
+    if (!LookupPrivilegeValueW(
+        NULL,       // lookup privilege on local system
+        wPrivilege, // privilege to lookup 
+        &luid))     // receives LUID of privilege
+    {
+        printf("LookupPrivilegeValue error: %u\n", GetLastError());
+        return GetLastError();
+    }
+        
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    if (bAdd)
+    {
+        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    }
+    else
+    {
+        tp.Privileges[0].Attributes = 0;
+    }
+
+    // Enable the privilege or disable all privileges.
+
+    if (!AdjustTokenPrivileges(
+        hToken,
+        FALSE,
+        &tp,
+        sizeof(TOKEN_PRIVILEGES),
+        (PTOKEN_PRIVILEGES)NULL,
+        (PDWORD)NULL))
+    {
+        printf("AdjustTokenPrivileges error: %u\n", GetLastError());
+        return GetLastError();
+    }
+
+    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
+
+    {
+        printf("The token does not have the specified privilege. \n");
+        return GetLastError();
+    }
+
     return 0;
 }
 

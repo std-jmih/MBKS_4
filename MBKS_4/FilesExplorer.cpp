@@ -5,6 +5,7 @@
 
 FilesExplorer::FilesExplorer()
 {
+
 }
 
 FilesExplorer::~FilesExplorer()
@@ -252,69 +253,82 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
     return 0;
 }
 
-// does not work
+int FilesExplorer::GetFileIntegrityLevel(LPCWSTR FileName)
+{
+    DWORD integrityLevel = SECURITY_MANDATORY_UNTRUSTED_RID;
+    PSECURITY_DESCRIPTOR pSD = NULL;
+    PACL acl = 0;
+    if (ERROR_SUCCESS == ::GetNamedSecurityInfoW(FileName, SE_FILE_OBJECT, LABEL_SECURITY_INFORMATION, 0, 0, 0, &acl, &pSD))
+    {
+        if (0 != acl && 0 < acl->AceCount)
+        {
+            SYSTEM_MANDATORY_LABEL_ACE* ace = 0;
+            if (::GetAce(acl, 0, reinterpret_cast<void**>(&ace)))
+            {
+                SID *sid = reinterpret_cast<SID *>(&ace->SidStart);
+                integrityLevel = sid->SubAuthority[0];
+            }
+        }
 
-//int FilesExplorer::GetFileIntegrityLevel(const WCHAR *chDirName)
-//{
-//    // Return value - integrity level:  (-1 error)
-//    // | -------|------------------------|----------------------------------|
-//    // | 0x0000 | Untrusted level        | SECURITY_MANDATORY_UNTRUSTED_RID |
-//    // | 0x1000 | Low integrity level    | SECURITY_MANDATORY_LOW_RID       |
-//    // | 0x2000 | Medium integrity level | SECURITY_MANDATORY_MEDIUM_RID    |
-//    // | 0x3000 | High integrity level   | SECURITY_MANDATORY_HIGH_RID      |
-//    // | 0x4000 | System integrity level | SECURITY_MANDATORY_SYSTEM_RID    |
-//    // | -------|------------------------|----------------------------------|
-//
-//    //WCHAR wUsername[64];
-//    //WCHAR wSID[128];
-//    //PSID pSidOwner                           = NULL;
-//    //PSID pSidGroup                           = NULL;
-//    //PACL pDACL                               = NULL;
-//    PACL pSACL                              ;
-//    PSECURITY_DESCRIPTOR pSecurityDescriptor;
-//
-//    //if (GetFileOwner(wUsername, wSID, chDirName) != ERROR_SUCCESS)
-//    //{
-//    //    return -1;
-//    //}
-//
-//    //ConvertStringSidToSidW(wSID, &pSidOwner);
-//    DWORD dStatus = 0;
-//
-//    dStatus = GetNamedSecurityInfoW(
-//        chDirName,                  // pObjectName
-//        SE_FILE_OBJECT,             // ObjectType
-//        LABEL_SECURITY_INFORMATION, // SecurityInfo
-//        NULL,                       // ppsidOwner
-//        NULL,                       // ppsidGroup
-//        NULL,                       // ppDacl
-//        &pSACL,                     // ppSacl
-//        &pSecurityDescriptor);      // ppSecurityDescriptor
-//
-//    // Check if descriptor is valid
-//    if (!IsValidSecurityDescriptor(pSecurityDescriptor))
-//    {
-//        return -1;
-//    }
-//
-//    BOOL IsSaclPresent   = false;
-//    BOOL IsSaclDefaulted = false;
-//    GetSecurityDescriptorSacl(pSecurityDescriptor, &IsSaclPresent, &pSACL, &IsSaclDefaulted);
-//
-//    //LPWSTR p;
-//    //ConvertSidToStringSidW(pSidOwner, &p);
-//
-//    if (dStatus != ERROR_SUCCESS)
-//    {
-//        //LocalFree(pSidOwner);
-//        //LocalFree(pSidGroup);
-//        LocalFree(pSecurityDescriptor);
-//        return -1;
-//    }
-//
-//
-//    //LocalFree(pSidOwner);
-//    //LocalFree(pSidGroup);
-//    LocalFree(pSecurityDescriptor);
-//    return 0;
-//}
+        PWSTR stringSD;
+        ULONG stringSDLen = 0;
+
+        ConvertSecurityDescriptorToStringSecurityDescriptorW(pSD, SDDL_REVISION_1, LABEL_SECURITY_INFORMATION, &stringSD, &stringSDLen);
+
+        if (pSD)
+        {
+            LocalFree(pSD);
+        }
+    }
+
+    return integrityLevel;
+}
+
+bool FilesExplorer::SetFileIntegrityLevel(int level, LPCWSTR FileName)
+{
+    LPCWSTR INTEGRITY_SDDL_SACL_W = NULL;
+    if (level == 0x0000)
+    {
+        INTEGRITY_SDDL_SACL_W = L""; // seems ok
+    }
+    else if (level == 0x1000)
+    {
+        INTEGRITY_SDDL_SACL_W = L"S:(ML;;NR;;;LW)";
+    }
+    else if (level == 0x2000)
+    {
+        INTEGRITY_SDDL_SACL_W = L"S:(ML;;NR;;;ME)";
+    }
+    else if (level == 0x3000)
+    {
+        INTEGRITY_SDDL_SACL_W = L"S:(ML;;NR;;;HI)";
+    }
+
+    DWORD dwErr = ERROR_SUCCESS;
+    PSECURITY_DESCRIPTOR pSD = NULL;
+
+    PACL pSacl          = NULL;
+    BOOL fSaclPresent   = FALSE;
+    BOOL fSaclDefaulted = FALSE;
+
+    if (ConvertStringSecurityDescriptorToSecurityDescriptorW(INTEGRITY_SDDL_SACL_W, SDDL_REVISION_1, &pSD, NULL))
+    {
+        if (GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted))
+        {
+            dwErr = SetNamedSecurityInfoW(
+                (LPWSTR)FileName,
+                SE_FILE_OBJECT, 
+                LABEL_SECURITY_INFORMATION,
+                NULL, NULL, NULL, 
+                pSacl);
+
+            if (dwErr == ERROR_SUCCESS)
+            {
+                return true;
+            }
+        }
+        LocalFree(pSD);
+        return false;
+    }
+    return false;
+}

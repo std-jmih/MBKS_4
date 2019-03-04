@@ -59,7 +59,9 @@ public:
 
     int GetACL(vector<stACE> *vACEs, const WCHAR *chDirName);
 
-    //int GetFileIntegrityLevel(const WCHAR *chDirName);
+    int GetFileIntegrityLevel(LPCWSTR FileName);
+
+    bool SetFileIntegrityLevel(int level, LPCWSTR FileName);
 
     int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 };
