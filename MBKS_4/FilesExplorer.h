@@ -63,6 +63,8 @@ public:
 
     bool SetFileIntegrityLevel(int level, LPCWSTR FileName);
 
+    bool AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask); // wchUserName - user which will be added to acl
+
     int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 };
 
