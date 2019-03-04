@@ -20,7 +20,9 @@ int main()
 
 
     vector<stACE> vACL;
+
     ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
+
     for (int k = 0; k < vACL.size(); k++)
     {
         wcout << vACL[k].iAceType << endl;
@@ -42,9 +44,36 @@ int main()
     }
     vACL.clear();
 
-    ClassFile->AddFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE, FILE_WRITE_ACCESS);
+    //ClassFile->AddFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE, FILE_WRITE_ACCESS);
 
-    ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
+    cout << endl << endl;
+
+    //ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
+    //for (int k = 0; k < vACL.size(); k++)
+    //{
+    //    wcout << vACL[k].iAceType << endl;
+    //    if (vACL[k].stFlags.ContainerInheritAce)
+    //        wcout << L"ContainerInheritAce" << endl;
+    //    if (vACL[k].stFlags.FailedAccessAce)
+    //        wcout << L"FailedAccessAce" << endl;
+    //    if (vACL[k].stFlags.InheritedAce)
+    //        wcout << L"InheritedAce" << endl;
+    //    if (vACL[k].stFlags.InheritOnlyAce)
+    //        wcout << L"InheritOnlyAce" << endl;
+    //    if (vACL[k].stFlags.NoPropagateInheritAce)
+    //        wcout << L"NoPropagateInheritAce" << endl;
+    //    if (vACL[k].stFlags.ObjectInheritAce)
+    //        wcout << L"ObjectInheritAce" << endl;
+    //    if (vACL[k].stFlags.SuccessfulAccessAceFlag)
+    //        wcout << L"SuccessfulAccessAceFlag" << endl;
+    //    wcout << vACL[k].wSID << endl << endl;
+    //}
+    //vACL.clear();
+
+    //cout << endl << endl;
+
+    ClassFile->DelFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE);
+
     for (int k = 0; k < vACL.size(); k++)
     {
         wcout << vACL[k].iAceType << endl;
@@ -65,7 +94,6 @@ int main()
         wcout << vACL[k].wSID << endl << endl;
     }
     vACL.clear();
-
     system("pause");
 
 

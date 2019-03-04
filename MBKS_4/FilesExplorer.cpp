@@ -355,11 +355,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     BOOL bDaclDefaulted;               // признак списка DACL по умолчанию
 
     DWORD dwRetCode;                   // код возврата
-
-    // читаем имя файла или каталога
-    //printf("Input a file or directory name: ");
-    //_getws(wchDirName);
-
+    
     // получаем длину дескриптора безопасности
     if (!GetFileSecurityW(
         wchDirName,                    // имя файла
@@ -397,10 +393,6 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
 
         return dwRetCode;
     }
-
-    // вводим имя пользователя, которого добавляем в DACL
-    //printf("Input a user name: ");
-    //_getws(wchUserName);
 
     // определяем длину SID пользователя
     if (!LookupAccountNameW(
@@ -506,7 +498,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     }
     default:
     {
-        return -1;
+        return false;
     }
     }
 
@@ -615,6 +607,132 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     delete[] lpSid;
     delete[] lpDomainName;
     delete[] lpNewDacl;
+
+    return 0;
+}
+
+bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType)
+{
+    PSECURITY_DESCRIPTOR lpSd = NULL;  // указатель на SD
+
+    PACL lpDacl = NULL;    // указатель на список управления доступом
+    BOOL bDaclPresent;     // признак присутствия списка DACL
+    BOOL bDaclDefaulted;   // признак списка DACL по умолчанию
+
+    void *lpAce = NULL;    // указатель на элемент списка
+
+    DWORD dwLength;        // длина дескриптора безопасности
+    DWORD dwRetCode;       // код возврата
+
+    // получаем длину дескриптора безопасности
+    if (!GetFileSecurityW(
+        wchDirName,                  // имя файла
+        DACL_SECURITY_INFORMATION,   // получаем DACL
+        lpSd,                        // адрес дескриптора безопасности
+        0,                           // определяем длину буфера
+        &dwLength))                  // адрес для требуемой длины
+    {
+        dwRetCode = GetLastError();
+
+        if (dwRetCode == ERROR_INSUFFICIENT_BUFFER)
+        {
+            // распределяем память для буфера
+            lpSd = (SECURITY_DESCRIPTOR *) new WCHAR[dwLength];
+        }
+        else
+        {
+            // выходим из программы
+            printf("Get file security failed.\n");
+            printf("Error code: %d\n", dwRetCode);
+
+            return dwRetCode;
+        }
+    }
+
+    // распределяем память для дескриптора безопасности
+    lpSd = (PSECURITY_DESCRIPTOR) new WCHAR[dwLength];
+
+    // читаем дескриптор безопасности
+    if (!GetFileSecurityW(
+        wchDirName,                  // имя файла
+        DACL_SECURITY_INFORMATION,   // получаем DACL
+        lpSd,                        // адрес дескриптора безопасности
+        dwLength,                    // длину буфера
+        &dwLength))                  // адрес для требуемой длины
+    {
+        dwRetCode = GetLastError();
+        printf("Get file security failed.\n");
+        printf("Error code: %d\n", dwRetCode);
+
+        return dwRetCode;
+    }
+
+    // получаем список DACL из дескриптора безопасности
+    if (!GetSecurityDescriptorDacl(
+        lpSd,              // адрес дескриптора безопасности
+        &bDaclPresent,     // признак присутствия списка DACL
+        &lpDacl,           // адрес указателя на DACL
+        &bDaclDefaulted))  // признак списка DACL по умолчанию
+    {
+        dwRetCode = GetLastError();
+        printf("Get security descriptor DACL failed.\n");
+        printf("Error code: %d\n", dwRetCode);
+
+        return dwRetCode;
+    }
+
+    // проверяем, есть ли DACL
+    if (!bDaclPresent)
+    {
+        printf("Dacl is not present.");
+
+        return 0;
+    }
+
+    // удаляем элементы списка DACL
+    for (unsigned i = 0; i < lpDacl->AceCount; ++i)
+    {
+        // получить элемент списка DACL
+        if (!GetAce(
+            lpDacl,    // адрес DACL
+            i,         // индекс элемента
+            &lpAce))   // указатель на элемент списка
+        {
+            dwRetCode = GetLastError();
+            printf("Get ace failed.\n");
+            printf("Error code: %d\n", dwRetCode);
+
+            return dwRetCode;
+        }
+        // проверяем тип элемента
+        if (((ACE_HEADER *)lpAce)->AceType == iAceType)
+        {
+            // удаляем элемент из списка DACL
+            if (!DeleteAce(lpDacl, i))
+            {
+                dwRetCode = GetLastError();
+                printf("Delete ace failed.\n");
+                printf("Error code: %d\n", dwRetCode);
+
+                return dwRetCode;
+            }
+        }
+    }
+    // устанавливаем новый дескриптор безопасности
+    if (!SetFileSecurityW(
+        wchDirName,                   // имя файла
+        DACL_SECURITY_INFORMATION,   // устанавливаем DACL
+        lpSd))                       // адрес дескриптора безопасности
+    {
+        dwRetCode = GetLastError();
+        printf("Set file security failed.\n");
+        printf("Error code: %d\n", dwRetCode);
+
+        return dwRetCode;
+    }
+
+    // освобождаем память
+    delete[] lpSd;
 
     return 0;
 }
