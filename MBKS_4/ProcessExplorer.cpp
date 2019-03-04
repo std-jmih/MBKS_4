@@ -70,7 +70,7 @@ int GetIntegrityLevel(HANDLE Token)
     TOKEN_MANDATORY_LABEL *pRez;
     char buf[28];
     pRez = (TOKEN_MANDATORY_LABEL *)buf;
-    
+
     if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, pRez, 28, &nlen))
     {
         return -1;
@@ -181,8 +181,11 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
     }
 }
 
+
 int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 {
+    Cleanup(vsThThreads);
+
     HANDLE processSnapshot;
     HANDLE moduleSnapshot;
     PROCESSENTRY32W processEntry;
@@ -243,7 +246,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 
     bool flag;
 
-    HANDLE hProcess;
+    HANDLE hProcess = NULL;
     BOOL bRez;
 
     TOKEN_USER *ptu;
@@ -265,6 +268,8 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     for (int i = 0; i < (*vsThThreads).size(); i++)
     {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (*vsThThreads)[i].uiPID);
+
+        (*vsThThreads)[i].hProcessHandle = hProcess; // <- Write process handle to thread struct
 
         //vv 32/64
         IsWow64Process(hProcess, &bRez);
@@ -397,4 +402,92 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     }
 
     return 0;
+}
+
+int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegrityLevel)
+{
+    HANDLE tok = 0;
+    HANDLE hNewToken = 0;
+    TOKEN_MANDATORY_LABEL *sLabel;
+    DWORD sLabelSize;
+    DWORD dStatus = 0;
+
+    WCHAR wSID_untrusted[16] = L"S-1-16-0";
+    WCHAR wSID_low[16]       = L"S-1-16-4096";
+    WCHAR wSID_medium[16]    = L"S-1-16-8192";
+    WCHAR wSID_high[16]      = L"S-1-16-12288";
+    WCHAR wSID_system[16]    = L"S-1-16-16384";
+    LPWSTR lpSID = NULL;
+
+    if (!OpenProcessToken(sProcess->hProcessHandle, TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &tok))
+    {
+        return -1;
+    }
+
+    switch (iNewIntegrityLevel)
+    {
+    case SECURITY_MANDATORY_UNTRUSTED_RID:
+    {
+        lpSID = wSID_untrusted;
+        break;
+    }
+    case SECURITY_MANDATORY_LOW_RID:
+    {
+        lpSID = wSID_low;
+        break;
+    }
+    case SECURITY_MANDATORY_MEDIUM_RID:
+    {
+        lpSID = wSID_medium;
+        break;
+    }
+    case SECURITY_MANDATORY_HIGH_RID:
+    {
+        lpSID = wSID_high;
+        break;
+    }
+    case SECURITY_MANDATORY_SYSTEM_RID:
+    {
+        lpSID = wSID_system;
+        break;
+    }
+    default:
+    {
+        return -1;
+    }
+    }
+
+    GetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, NULL, 0, &sLabelSize);
+
+    dStatus = GetLastError();
+    if (dStatus != ERROR_INSUFFICIENT_BUFFER && dStatus != ERROR_SUCCESS)
+    {
+        return dStatus;
+    }
+
+    sLabel = (TOKEN_MANDATORY_LABEL *)malloc(sLabelSize);
+
+    if (!GetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize, &sLabelSize))
+    {
+        free(sLabel);
+        return GetLastError();
+    }
+
+    ConvertStringSidToSidW(lpSID, &(sLabel->Label.Sid));
+
+    SetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize);
+
+    free(sLabel);
+    return 0;
+}
+
+void ProcessExplorer::Cleanup(vector<sThread> *vsThThreads)
+{
+    for (int k = 0; k < vsThThreads->size(); k++)
+    {
+        (*vsThThreads)[k].vwDLL.clear();
+        (*vsThThreads)[k].vwPrivileges.clear();
+        CloseHandle((*vsThThreads)[k].hProcessHandle);
+    }
+    vsThThreads->clear();
 }

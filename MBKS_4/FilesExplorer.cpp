@@ -3,7 +3,6 @@
 #include "accctrl.h"
 #include "aclapi.h"
 
-
 FilesExplorer::FilesExplorer()
 {
 }
@@ -12,7 +11,7 @@ FilesExplorer::~FilesExplorer()
 {
 }
 
-int FilesExplorer::GetFileOwner(WCHAR *wRez, const WCHAR *chDirName)
+int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName)
 {
     DWORD dwRtnCode = 0;
     PSID pSidOwner;
@@ -63,6 +62,7 @@ int FilesExplorer::GetFileOwner(WCHAR *wRez, const WCHAR *chDirName)
     // Check GetLastError for GetSecurityInfo error condition.
     if (dwRtnCode != ERROR_SUCCESS)
     {
+        CloseHandle(hFile);
         return GetLastError();
     }
 
@@ -89,18 +89,26 @@ int FilesExplorer::GetFileOwner(WCHAR *wRez, const WCHAR *chDirName)
   // Check GetLastError for LookupAccountSid error condition.
     if (bRtnBool == FALSE)
     {
+        CloseHandle(hFile);
         return GetLastError();
     }
 
-    //copy AcctName to wRez
+    // Copy AcctName to wUsername
 #pragma warning (disable: 4996)
-    wcsncpy(wRez, AcctName, dwAcctName);
-    wRez[dwAcctName] = L'\0';
+    wcsncpy(wUsername, AcctName, dwAcctName);
+    wUsername[dwAcctName] = L'\0';
 
+    // Copy string SID to result buffer
+    LPWSTR p = NULL;
+    ConvertSidToStringSidW(pSidOwner, &p);
+    wcscpy(wSID, p);
+    LocalFree(p);
+
+    CloseHandle(hFile);
     return ERROR_SUCCESS;
 }
 
-int FilesExplorer::GetACL(vector<stACE> *vACEs, const char *chDirName)
+int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
 {
     if (chDirName == NULL)
     {
@@ -121,7 +129,7 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const char *chDirName)
     DWORD dwRetCode;                  // код возврата
 
     // получаем длину дескриптора безопасности
-    if (!GetFileSecurity(
+    if (!GetFileSecurityW(
         chDirName,                    // имя файла
         DACL_SECURITY_INFORMATION,    // получаем DACL
         lpSd,                         // адрес дескриптора безопасности
@@ -141,7 +149,7 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const char *chDirName)
     lpSd = (PSECURITY_DESCRIPTOR) new char[dwLength];
 
     // читаем дескриптор безопасности
-    if (!GetFileSecurity(
+    if (!GetFileSecurityW(
         chDirName,                   // имя файла
         DACL_SECURITY_INFORMATION,   // получаем DACL
         lpSd,                        // адрес дескриптора безопасности
@@ -243,3 +251,70 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const char *chDirName)
 
     return 0;
 }
+
+// does not work
+
+//int FilesExplorer::GetFileIntegrityLevel(const WCHAR *chDirName)
+//{
+//    // Return value - integrity level:  (-1 error)
+//    // | -------|------------------------|----------------------------------|
+//    // | 0x0000 | Untrusted level        | SECURITY_MANDATORY_UNTRUSTED_RID |
+//    // | 0x1000 | Low integrity level    | SECURITY_MANDATORY_LOW_RID       |
+//    // | 0x2000 | Medium integrity level | SECURITY_MANDATORY_MEDIUM_RID    |
+//    // | 0x3000 | High integrity level   | SECURITY_MANDATORY_HIGH_RID      |
+//    // | 0x4000 | System integrity level | SECURITY_MANDATORY_SYSTEM_RID    |
+//    // | -------|------------------------|----------------------------------|
+//
+//    //WCHAR wUsername[64];
+//    //WCHAR wSID[128];
+//    //PSID pSidOwner                           = NULL;
+//    //PSID pSidGroup                           = NULL;
+//    //PACL pDACL                               = NULL;
+//    PACL pSACL                              ;
+//    PSECURITY_DESCRIPTOR pSecurityDescriptor;
+//
+//    //if (GetFileOwner(wUsername, wSID, chDirName) != ERROR_SUCCESS)
+//    //{
+//    //    return -1;
+//    //}
+//
+//    //ConvertStringSidToSidW(wSID, &pSidOwner);
+//    DWORD dStatus = 0;
+//
+//    dStatus = GetNamedSecurityInfoW(
+//        chDirName,                  // pObjectName
+//        SE_FILE_OBJECT,             // ObjectType
+//        LABEL_SECURITY_INFORMATION, // SecurityInfo
+//        NULL,                       // ppsidOwner
+//        NULL,                       // ppsidGroup
+//        NULL,                       // ppDacl
+//        &pSACL,                     // ppSacl
+//        &pSecurityDescriptor);      // ppSecurityDescriptor
+//
+//    // Check if descriptor is valid
+//    if (!IsValidSecurityDescriptor(pSecurityDescriptor))
+//    {
+//        return -1;
+//    }
+//
+//    BOOL IsSaclPresent   = false;
+//    BOOL IsSaclDefaulted = false;
+//    GetSecurityDescriptorSacl(pSecurityDescriptor, &IsSaclPresent, &pSACL, &IsSaclDefaulted);
+//
+//    //LPWSTR p;
+//    //ConvertSidToStringSidW(pSidOwner, &p);
+//
+//    if (dStatus != ERROR_SUCCESS)
+//    {
+//        //LocalFree(pSidOwner);
+//        //LocalFree(pSidGroup);
+//        LocalFree(pSecurityDescriptor);
+//        return -1;
+//    }
+//
+//
+//    //LocalFree(pSidOwner);
+//    //LocalFree(pSidGroup);
+//    LocalFree(pSecurityDescriptor);
+//    return 0;
+//}

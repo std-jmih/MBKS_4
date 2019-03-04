@@ -8,12 +8,12 @@ using namespace std;
 
 struct stAceFlags
 {
-    BYTE ContainerInheritAce : 1; // CONTAINER_INHERIT_ACE
-    BYTE FailedAccessAce : 1; // FAILED_ACCESS_ACE_FLAG
-    BYTE InheritOnlyAce : 1; // INHERIT_ONLY_ACE
-    BYTE InheritedAce : 1; // INHERITED_ACE
-    BYTE NoPropagateInheritAce : 1; // NO_PROPAGATE_INHERIT_ACE
-    BYTE ObjectInheritAce : 1; // OBJECT_INHERIT_ACE
+    BYTE ContainerInheritAce     : 1; // CONTAINER_INHERIT_ACE
+    BYTE FailedAccessAce         : 1; // FAILED_ACCESS_ACE_FLAG
+    BYTE InheritOnlyAce          : 1; // INHERIT_ONLY_ACE
+    BYTE InheritedAce            : 1; // INHERITED_ACE
+    BYTE NoPropagateInheritAce   : 1; // NO_PROPAGATE_INHERIT_ACE
+    BYTE ObjectInheritAce        : 1; // OBJECT_INHERIT_ACE
     BYTE SuccessfulAccessAceFlag : 1; // SUCCESSFUL_ACCESS_ACE_FLAG
 };
 
@@ -51,15 +51,16 @@ struct stACE
     WCHAR      wSID[512]; // SID
 };
 
-
 class FilesExplorer
 {
 public:
     FilesExplorer();
     ~FilesExplorer();
 
-    int GetACL(vector<stACE> *vACEs, const char *chDirName);
+    int GetACL(vector<stACE> *vACEs, const WCHAR *chDirName);
 
-    int GetFileOwner(WCHAR * wRez, const WCHAR *chDirName);
+    //int GetFileIntegrityLevel(const WCHAR *chDirName);
+
+    int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 };
 

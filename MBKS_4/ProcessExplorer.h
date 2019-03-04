@@ -5,6 +5,7 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 
+
 using namespace std;
 
 struct stPriv // if all boolean variables are "false" privilege is disabled
@@ -30,13 +31,15 @@ struct sThread
     vector<wstring> vwDLL;                        // DLLs used by process
     vector<stPriv>  vwPrivileges;                 // Process privileges
 
+    HANDLE hProcessHandle;                        // Process handle
+
     // ASLR flags: -1 - error, 0 - no, 1 - yes
     int             iEnableBottomUpRandomization; // Bottom-up ASLR
     int             iEnableForceRelocateImages;   // Forced ASLR
     int             iEnableHighEntropy;           // High enthropy
     int             iDisallowStrippedImages;      // Forced ASLR with Required Relocations
     
-    // Integrity level:
+    // Integrity level: (-1 error)
     // | -------|------------------------|----------------------------------|
     // | 0x0000 | Untrusted level        | SECURITY_MANDATORY_UNTRUSTED_RID |
     // | 0x1000 | Low integrity level    | SECURITY_MANDATORY_LOW_RID       |
@@ -45,7 +48,6 @@ struct sThread
     // | 0x4000 | System integrity level | SECURITY_MANDATORY_SYSTEM_RID    |
     // | -------|------------------------|----------------------------------|
     int             iIntegrityLevel;
-
 };
 
 class ProcessExplorer
@@ -56,4 +58,8 @@ public:
 
 
     int GetThreads(vector<sThread> *vsThThreads);
+
+    int SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegrityLevel);
+
+    void Cleanup(vector<sThread> *vsThThreads);
 };
