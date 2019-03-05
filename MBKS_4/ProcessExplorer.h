@@ -55,8 +55,8 @@ class ProcessExplorer
 {
 public:
     ProcessExplorer();
-    ~ProcessExplorer();
 
+    ~ProcessExplorer();
 
     int GetThreads(vector<sThread> *vsThThreads);
 
@@ -65,4 +65,13 @@ public:
     bool SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv, bool bAdd); // bool bAdd: true - add, false - delete privilege
 
     void Cleanup(vector<sThread> *vsThThreads);
+
+private:
+    PSID GetSid(LPWSTR wUsername);
+
+    int GetIntegrityLevel(HANDLE Token);
+
+    int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges);
+
+    vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last);
 };

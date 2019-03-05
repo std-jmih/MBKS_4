@@ -12,7 +12,7 @@ ProcessExplorer::~ProcessExplorer()
 {
 }
 
-PSID GetSid(LPWSTR wUsername)
+PSID ProcessExplorer::GetSid(LPWSTR wUsername)
 {
     int i = 0;
     SID_NAME_USE type_of_SID;
@@ -63,7 +63,7 @@ PSID GetSid(LPWSTR wUsername)
     return lpSID;
 }
 
-int GetIntegrityLevel(HANDLE Token)
+int ProcessExplorer::GetIntegrityLevel(HANDLE Token)
 {
     DWORD nlen;
     DWORD SidSubAuthority;
@@ -82,7 +82,7 @@ int GetIntegrityLevel(HANDLE Token)
     }
 }
 
-vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last)
+vector<stPriv>::iterator ProcessExplorer::unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last)
 {
     if (first == last)
     {
@@ -99,7 +99,7 @@ vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::
     return ++result;
 }
 
-int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges)
+int ProcessExplorer::GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges)
 {
     DWORD nlen;
     TOKEN_PRIVILEGES *pRez = NULL;
@@ -521,7 +521,7 @@ bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv,
     }
 
     // change priv
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hTok))
+    if (!OpenProcessToken(sProcess->hProcessHandle, TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hTok))
     {
         return false;
     }

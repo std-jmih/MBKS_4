@@ -5,12 +5,40 @@
 
 FilesExplorer::FilesExplorer()
 {
-
 }
 
 FilesExplorer::~FilesExplorer()
 {
 }
+
+
+bool Set_SE_TAKE_OWNERSHIP_NAME(HANDLE hCurrentProcess)
+{
+    bool retval = false;
+    PTOKEN_PRIVILEGES pOldPrivs = NULL;
+
+    size_t sz = sizeof(TOKEN_PRIVILEGES);
+
+    // memory
+    PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
+
+    // fill in buffer
+    pPriv->PrivilegeCount = 1;
+    pPriv->Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    if (!LookupPrivilegeValueW(NULL, L"SeTakeOwnershipPrivilege", &pPriv->Privileges[0].Luid))
+    {
+        return false;
+    }
+
+    // change priv
+    retval = (bool)AdjustTokenPrivileges(hCurrentProcess, FALSE, pPriv, 0, NULL, NULL);
+
+    LocalFree(pPriv);
+
+    return retval;
+}
+
 
 int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName)
 {
@@ -737,8 +765,13 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     return 0;
 }
 
+int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName)
+{
+    return 0;
+}
+
 /*
-int FilesExplorer::SetFileOwner(CHAR *wUsername, WCHAR *chDirName)
+int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName)
 {
     BOOL bRetval = FALSE;
 
@@ -746,8 +779,7 @@ int FilesExplorer::SetFileOwner(CHAR *wUsername, WCHAR *chDirName)
     PSID pSIDAdmin = NULL;
     PSID pSIDEveryone = NULL;
     PACL pACL = NULL;
-    SID_IDENTIFIER_AUTHORITY SIDAuthWorld =
-        SECURITY_WORLD_SID_AUTHORITY;
+    SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
     SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
     const int NUM_ACES = 2;
     EXPLICIT_ACCESS ea[NUM_ACES];
@@ -936,7 +968,7 @@ int FilesExplorer::SetFileOwner(CHAR *wUsername, WCHAR *chDirName)
     }
 
     // Enable the SE_TAKE_OWNERSHIP_NAME privilege.
-    if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE))
+    if (!Set_SE_TAKE_OWNERSHIP_NAME(hToken))
     {
         printf("You must be logged on as Administrator.\n");
         if (pSIDAdmin)
@@ -991,7 +1023,7 @@ int FilesExplorer::SetFileOwner(CHAR *wUsername, WCHAR *chDirName)
     }
 
     // Disable the SE_TAKE_OWNERSHIP_NAME privilege.
-    if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, FALSE))
+    if (!Set_SE_TAKE_OWNERSHIP_NAME(hToken))
     {
         printf("Failed SetPrivilege call unexpectedly.\n");
         if (pSIDAdmin)
@@ -1052,3 +1084,4 @@ int FilesExplorer::SetFileOwner(CHAR *wUsername, WCHAR *chDirName)
     return bRetval;
 }
 */
+
