@@ -106,6 +106,7 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
     WCHAR wPrivilege[32];
     DWORD dBufLen = 32;
     stPriv stPrTmp;
+    bool flag;
 
     GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
@@ -126,6 +127,8 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
     {
         for (unsigned int i = 0; i < pRez->PrivilegeCount; i++)
         {
+            flag = true;
+
             LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
 
             stPrTmp.wName = wPrivilege;
@@ -133,6 +136,7 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
             if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_ENABLED) == SE_PRIVILEGE_ENABLED)
             {
                 stPrTmp.bEnabled = true;
+                flag = false;
             }
             else
             {
@@ -142,6 +146,7 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
             if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_ENABLED_BY_DEFAULT) == SE_PRIVILEGE_ENABLED_BY_DEFAULT)
             {
                 stPrTmp.bEnabledByDefault = true;
+                flag = false;
             }
             else
             {
@@ -151,21 +156,24 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
             if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_USED_FOR_ACCESS) == SE_PRIVILEGE_USED_FOR_ACCESS)
             {
                 stPrTmp.bUsedForAccess = true;
+                flag = false;
             }
             else
             {
                 stPrTmp.bUsedForAccess = false;
             }
 
-            //if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_REMOVED) == SE_PRIVILEGE_REMOVED)
-            //{
-            //    wcout << L"SE_PRIVILEGE_REMOVED" << endl;
-            //    stPrTmp.bRemoved = true;
-            //}
-            //else
-            //{
-            //    stPrTmp.bRemoved = false;
-            //}
+            if ((pRez->Privileges[i].Attributes & SE_PRIVILEGE_REMOVED) == SE_PRIVILEGE_REMOVED)
+            {
+                stPrTmp.bRemoved = true;
+                flag = false;
+            }
+            else
+            {
+                stPrTmp.bRemoved = false;
+            }
+
+            stPrTmp.bDisabled = flag;
 
             vwPrivileges->push_back(stPrTmp);
         }
@@ -173,8 +181,8 @@ int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileg
         delete[] pRez;
 
         //vv privileges fix
-        vector<stPriv>::iterator iter = unique((*vwPrivileges).begin(), (*vwPrivileges).end());
-        (*vwPrivileges).erase(iter, (*vwPrivileges).end());
+        //vector<stPriv>::iterator iter = unique((*vwPrivileges).begin(), (*vwPrivileges).end());
+        //(*vwPrivileges).erase(iter, (*vwPrivileges).end());
         //^^ privileges fix
 
         return 0;
@@ -369,7 +377,11 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 
         (*vsThThreads)[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
 
-        GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges); // <- privileges
+        //GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges); // <- privileges
+        if (GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges) == -1)
+        {
+            wcout << L"get priv err " << i << endl;
+        }
 
         //get the SID of the token
         ptu = (TOKEN_USER *)tubuf;
@@ -490,7 +502,7 @@ bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv,
 
     // memory
     PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
-    DWORD RetLen, *pRetLen = NULL;
+    //DWORD RetLen, *pRetLen = NULL;
 
     // fill in buffer
     pPriv->PrivilegeCount = 1;
@@ -514,7 +526,8 @@ bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv,
         return false;
     }
 
-    retval = (bool)AdjustTokenPrivileges(hTok, FALSE, pPriv, sz, pOldPrivs, pRetLen);
+    retval = (bool)AdjustTokenPrivileges(hTok, FALSE, pPriv, 0, NULL, NULL);
+
 
     return retval;
 }

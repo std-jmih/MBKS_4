@@ -11,10 +11,11 @@ using namespace std;
 struct stPriv // if all boolean variables are "false" privilege is disabled
 {
     wstring         wName;                        // Privilege's name
+    bool            bDisabled;                     // 0 test
     bool            bEnabled;                     // SE_PRIVILEGE_ENABLED
     bool            bEnabledByDefault;            // SE_PRIVILEGE_ENABLED_BY_DEFAULT
     bool            bUsedForAccess;               // SE_PRIVILEGE_USED_FOR_ACCESS
-    //bool            bRemoved;                     // SE_PRIVILEGE_REMOVED // seems unnecessary
+    bool            bRemoved;                     // SE_PRIVILEGE_REMOVED // seems unnecessary
 };
 
 struct sThread

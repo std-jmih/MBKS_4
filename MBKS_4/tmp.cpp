@@ -19,34 +19,34 @@ int main()
     //wcout << wName << endl << wSID;
 
 
-    vector<stACE> vACL;
+    //vector<stACE> vACL;
 
-    ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
-
-    for (int k = 0; k < vACL.size(); k++)
-    {
-        wcout << vACL[k].iAceType << endl;
-        if (vACL[k].stFlags.ContainerInheritAce)
-            wcout << L"ContainerInheritAce" << endl;
-        if (vACL[k].stFlags.FailedAccessAce)
-            wcout << L"FailedAccessAce" << endl;
-        if (vACL[k].stFlags.InheritedAce)
-            wcout << L"InheritedAce" << endl;
-        if (vACL[k].stFlags.InheritOnlyAce)
-            wcout << L"InheritOnlyAce" << endl;
-        if (vACL[k].stFlags.NoPropagateInheritAce)
-            wcout << L"NoPropagateInheritAce" << endl;
-        if (vACL[k].stFlags.ObjectInheritAce)
-            wcout << L"ObjectInheritAce" << endl;
-        if (vACL[k].stFlags.SuccessfulAccessAceFlag)
-            wcout << L"SuccessfulAccessAceFlag" << endl;
-        wcout << vACL[k].wSID << endl << endl;
-    }
-    vACL.clear();
+    //ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
+    //
+    //for (int k = 0; k < vACL.size(); k++)
+    //{
+    //    wcout << vACL[k].iAceType << endl;
+    //    if (vACL[k].stFlags.ContainerInheritAce)
+    //        wcout << L"ContainerInheritAce" << endl;
+    //    if (vACL[k].stFlags.FailedAccessAce)
+    //        wcout << L"FailedAccessAce" << endl;
+    //    if (vACL[k].stFlags.InheritedAce)
+    //        wcout << L"InheritedAce" << endl;
+    //    if (vACL[k].stFlags.InheritOnlyAce)
+    //        wcout << L"InheritOnlyAce" << endl;
+    //    if (vACL[k].stFlags.NoPropagateInheritAce)
+    //        wcout << L"NoPropagateInheritAce" << endl;
+    //    if (vACL[k].stFlags.ObjectInheritAce)
+    //        wcout << L"ObjectInheritAce" << endl;
+    //    if (vACL[k].stFlags.SuccessfulAccessAceFlag)
+    //        wcout << L"SuccessfulAccessAceFlag" << endl;
+    //    wcout << vACL[k].wSID << endl << endl;
+    //}
+    //vACL.clear();
 
     //ClassFile->AddFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE, FILE_WRITE_ACCESS);
 
-    cout << endl << endl;
+    //cout << endl << endl;
 
     //ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
     //for (int k = 0; k < vACL.size(); k++)
@@ -72,29 +72,29 @@ int main()
 
     //cout << endl << endl;
 
-    ClassFile->DelFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE);
-
-    for (int k = 0; k < vACL.size(); k++)
-    {
-        wcout << vACL[k].iAceType << endl;
-        if (vACL[k].stFlags.ContainerInheritAce)
-            wcout << L"ContainerInheritAce" << endl;
-        if (vACL[k].stFlags.FailedAccessAce)
-            wcout << L"FailedAccessAce" << endl;
-        if (vACL[k].stFlags.InheritedAce)
-            wcout << L"InheritedAce" << endl;
-        if (vACL[k].stFlags.InheritOnlyAce)
-            wcout << L"InheritOnlyAce" << endl;
-        if (vACL[k].stFlags.NoPropagateInheritAce)
-            wcout << L"NoPropagateInheritAce" << endl;
-        if (vACL[k].stFlags.ObjectInheritAce)
-            wcout << L"ObjectInheritAce" << endl;
-        if (vACL[k].stFlags.SuccessfulAccessAceFlag)
-            wcout << L"SuccessfulAccessAceFlag" << endl;
-        wcout << vACL[k].wSID << endl << endl;
-    }
-    vACL.clear();
-    system("pause");
+    //ClassFile->DelFileAcl(L"C:\\Users\\Public\\Projects\\test1.txt", L"Аркадий", ACCESS_ALLOWED_ACE_TYPE);
+    //
+    //for (int k = 0; k < vACL.size(); k++)
+    //{
+    //    wcout << vACL[k].iAceType << endl;
+    //    if (vACL[k].stFlags.ContainerInheritAce)
+    //        wcout << L"ContainerInheritAce" << endl;
+    //    if (vACL[k].stFlags.FailedAccessAce)
+    //        wcout << L"FailedAccessAce" << endl;
+    //    if (vACL[k].stFlags.InheritedAce)
+    //        wcout << L"InheritedAce" << endl;
+    //    if (vACL[k].stFlags.InheritOnlyAce)
+    //        wcout << L"InheritOnlyAce" << endl;
+    //    if (vACL[k].stFlags.NoPropagateInheritAce)
+    //        wcout << L"NoPropagateInheritAce" << endl;
+    //    if (vACL[k].stFlags.ObjectInheritAce)
+    //        wcout << L"ObjectInheritAce" << endl;
+    //    if (vACL[k].stFlags.SuccessfulAccessAceFlag)
+    //        wcout << L"SuccessfulAccessAceFlag" << endl;
+    //    wcout << vACL[k].wSID << endl << endl;
+    //}
+    //vACL.clear();
+    //system("pause");
 
 
     //int a;
@@ -109,10 +109,10 @@ int main()
     ClassProc->GetThreads(&vThreads);
 
     int N = (int)vThreads.size();
-    for (int i = 130; i < N; i++)
+    for (int i = 160; i < N; i++)
     {
         wcout << i << endl <<
-            L"Name:\t\t\t"         <<   vThreads[i].wName                      << endl <<
+            L"Name:\t\t\t" << vThreads[i].wName << endl <<
             //L"Type:\t\t\t"         << ((vThreads[i].bType) ? L"32" : L"64")    << endl <<
             //L"PID:\t\t\t"          <<   vThreads[i].uiPID                      << endl <<
             //L"Path:\t\t\t"         <<   vThreads[i].wPath                      << endl <<
@@ -133,28 +133,28 @@ int main()
         //{
         //    wcout << L"\t" << vThreads[i].vwDLL[k] << endl;
         //}
-        wcout << L"Privileges:" << endl;
+        wcout << L"Privileges: " << endl;
         for (int k = 0; k < vThreads[i].vwPrivileges.size(); k++)
         {
-            if (vThreads[i].vwPrivileges[k].bEnabled          ||
-                vThreads[i].vwPrivileges[k].bEnabledByDefault ||
-                vThreads[i].vwPrivileges[k].bUsedForAccess)
+            wcout << vThreads[i].vwPrivileges[k].wName << endl << L"\t";
+            if (vThreads[i].vwPrivileges[k].bEnabled)
             {
-                wcout << vThreads[i].vwPrivileges[k].wName << endl << L"\t";
-                if (vThreads[i].vwPrivileges[k].bEnabled)
-                {
-                    wcout << L"Enabled  ";
-                }
-                if (vThreads[i].vwPrivileges[k].bEnabledByDefault)
-                {
-                    wcout << L"EnabledByDefault  ";
-                }
-                if (vThreads[i].vwPrivileges[k].bUsedForAccess)
-                {
-                    wcout << L"UsedForAccess  ";
-                }
-                wcout << endl;
+                wcout << L"Enabled  ";
             }
+            if (vThreads[i].vwPrivileges[k].bEnabledByDefault)
+            {
+                wcout << L"EnabledByDefault  ";
+            }
+            if (vThreads[i].vwPrivileges[k].bUsedForAccess)
+            {
+                wcout << L"UsedForAccess  ";
+            }
+            if (vThreads[i].vwPrivileges[k].bDisabled)
+            {
+                wcout << L"Disabled  ";
+            }
+            wcout << endl;
+
         }
         wcout << endl << endl;
 
@@ -163,15 +163,16 @@ int main()
 
     int k;
     cin >> k;
-    
-    WCHAR priv[32] = L"SeChangeNotifyPrivilege";
-    
-    ClassProc->SetProcessPrivilege(&vThreads[k], priv, false);
-    
+
+    WCHAR priv[32];
+    wcin >> priv;
+
+    ClassProc->SetProcessPrivilege(&vThreads[k], priv, true);
+
     ClassProc->GetThreads(&vThreads);
-    
+
     N = (int)vThreads.size();
-    for (int i = 150; i < N; i++)
+    for (int i = k - 5; i < k+5, i < N; i++)
     {
         wcout << i << endl <<
             L"Name:\t\t\t"        << vThreads[i].wName           << endl <<
@@ -180,25 +181,25 @@ int main()
         wcout << L"Privileges:" << endl;
         for (int k = 0; k < vThreads[i].vwPrivileges.size(); k++)
         {
-            if (vThreads[i].vwPrivileges[k].bEnabled ||
-                vThreads[i].vwPrivileges[k].bEnabledByDefault ||
-                vThreads[i].vwPrivileges[k].bUsedForAccess)
+            wcout << vThreads[i].vwPrivileges[k].wName << endl << L"\t";
+            if (vThreads[i].vwPrivileges[k].bEnabled)
             {
-                wcout << vThreads[i].vwPrivileges[k].wName << endl << L"\t";
-                if (vThreads[i].vwPrivileges[k].bEnabled)
-                {
-                    wcout << L"Enabled  ";
-                }
-                if (vThreads[i].vwPrivileges[k].bEnabledByDefault)
-                {
-                    wcout << L"EnabledByDefault  ";
-                }
-                if (vThreads[i].vwPrivileges[k].bUsedForAccess)
-                {
-                    wcout << L"UsedForAccess  ";
-                }
-                wcout << endl;
+                wcout << L"Enabled  ";
             }
+            if (vThreads[i].vwPrivileges[k].bEnabledByDefault)
+            {
+                wcout << L"EnabledByDefault  ";
+            }
+            if (vThreads[i].vwPrivileges[k].bUsedForAccess)
+            {
+                wcout << L"UsedForAccess  ";
+            }
+            if (vThreads[i].vwPrivileges[k].bDisabled)
+            {
+                wcout << L"Disabled  ";
+            }
+            wcout << endl;
+
         }
         wcout << endl << endl;
     }

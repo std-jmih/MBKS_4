@@ -65,7 +65,9 @@ public:
 
     bool AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask); // wchUserName - user which will be added to acl
 
-    bool DelFileAcl(const WCHAR * wchDirName, const WCHAR * wchUserName, int iAceType);
+    bool DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType);
+
+    //int SetFileOwner(CHAR * wUsername, WCHAR * chDirName);
 
     int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 };
