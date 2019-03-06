@@ -12,33 +12,93 @@ FilesExplorer::~FilesExplorer()
 }
 
 
-bool Set_SE_TAKE_OWNERSHIP_NAME(HANDLE hCurrentProcess)
+bool FilesExplorer::SetPrivileges(HANDLE hCurrentProcess)
 {
-    bool retval = false;
-    PTOKEN_PRIVILEGES pOldPrivs = NULL;
+    HANDLE hTok = 0;
 
-    size_t sz = sizeof(TOKEN_PRIVILEGES);
+    size_t sz = sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES);
 
     // memory
     PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
 
     // fill in buffer
-    pPriv->PrivilegeCount = 1;
+    pPriv->PrivilegeCount = 2;
     pPriv->Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    pPriv->Privileges[1].Attributes = SE_PRIVILEGE_ENABLED;
 
     if (!LookupPrivilegeValueW(NULL, L"SeTakeOwnershipPrivilege", &pPriv->Privileges[0].Luid))
     {
         return false;
     }
+    if (!LookupPrivilegeValueW(NULL, L"SeRestorePrivilege", &pPriv->Privileges[1].Luid))
+    {
+        return false;
+    }
+
+    if (!OpenProcessToken(hCurrentProcess, TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hTok))
+    {
+        return false;
+    }
 
     // change priv
-    retval = (bool)AdjustTokenPrivileges(hCurrentProcess, FALSE, pPriv, 0, NULL, NULL);
-
-    LocalFree(pPriv);
-
-    return retval;
+    if (!AdjustTokenPrivileges(hTok, FALSE, pPriv, 0, NULL, NULL))
+    {
+        return false;
+    }
+    
+    return true;
 }
 
+PSID FilesExplorer::GetSid(LPWSTR wUsername)
+{
+    int i = 0;
+    SID_NAME_USE type_of_SID;
+    DWORD dwLengthOfDomainName = 0;
+    DWORD dwLengthOfSID = 0;
+    DWORD dwErrCode;
+    SID *lpSID = NULL;
+    LPWSTR lpDomainName = NULL;
+
+    if (!LookupAccountNameW(
+        NULL,
+        wUsername,
+        NULL,
+        &dwLengthOfSID,
+        NULL,
+        &dwLengthOfDomainName,
+        &type_of_SID))
+    {
+        dwErrCode = GetLastError();
+        if (dwErrCode == ERROR_INSUFFICIENT_BUFFER)
+        {
+            lpSID = (SID *) new char[dwLengthOfSID];
+            lpDomainName = (LPWSTR) new wchar_t[dwLengthOfDomainName];
+        }
+        else
+        {
+            printf("Lookup account name failed.\n");
+            printf("Error code: %d\n", dwErrCode);
+        }
+    }
+
+    if (!LookupAccountNameW(
+        NULL,
+        wUsername,
+        lpSID,
+        &dwLengthOfSID,
+        lpDomainName,
+        &dwLengthOfDomainName,
+        &type_of_SID))
+    {
+        dwErrCode = GetLastError();
+        printf("Lookup account name failed.\n");
+        printf("Error code: %d\n", dwErrCode);
+    }
+
+    delete[] lpDomainName;
+
+    return lpSID;
+}
 
 int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName)
 {
@@ -765,8 +825,35 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     return 0;
 }
 
-int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName)
+int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword)
 {
+    PSID pSid = NULL;
+
+    pSid = GetSid(wUsername);
+    if (pSid == NULL)
+    {
+        return -1;
+    }
+    
+    HANDLE hCurrentProc = GetCurrentProcess();
+    if (!SetPrivileges(hCurrentProc))
+    {
+        return -1;
+    }
+
+    DWORD status = SetNamedSecurityInfoW(
+        chDirName,
+        SE_FILE_OBJECT,
+        OWNER_SECURITY_INFORMATION,
+        pSid,
+        NULL,
+        NULL,
+        NULL);
+    if(status != ERROR_SUCCESS)
+    {
+        return -1;
+    }
+
     return 0;
 }
 

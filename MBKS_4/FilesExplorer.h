@@ -67,8 +67,13 @@ public:
 
     bool DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType);
 
-    int SetFileOwner(WCHAR *wUsername, WCHAR *chDirName);
+    int SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword);
 
     int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
+
+private:
+    bool SetPrivileges(HANDLE hCurrentProcess);
+
+    PSID GetSid(LPWSTR wUsername);
 };
 

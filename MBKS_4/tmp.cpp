@@ -13,6 +13,28 @@ int main()
     ProcessExplorer *ClassProc = new ProcessExplorer;
     FilesExplorer   *ClassFile = new FilesExplorer;
 
+
+    //    cout << ClassFile->GetFileIntegrityLevel(L"C:\\Users\\Public\\Projects\\test1.txt") << endl;
+
+    WCHAR user[64];
+    WCHAR pass[64] = L"123";
+    WCHAR sid[64];
+    WCHAR newuser[64] = L"test";
+    WCHAR file[128] = L"C:\\Users\\Public\\Projects\\test1.txt";
+    
+    ClassFile->GetFileOwner(user, sid, file);
+    wcout << user << endl << sid << endl << endl;
+    
+    ClassFile->SetFileOwner(newuser, file, pass);
+    
+    ClassFile->GetFileOwner(user, sid, file);
+    wcout << user << endl << sid << endl << endl;
+
+    //while (1)
+    //{
+    //
+    //}
+
     //WCHAR wName[512];
     //WCHAR wSID[512];
     //ClassFile->GetFileOwner(wName, wSID, L"C:\\Users\\Public\\Projects\\test.txt");

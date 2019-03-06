@@ -228,7 +228,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
         (*vsThThreads)[i].uiParentPID = processEntry.th32ParentProcessID; //PROCESSENTRY32
 
         moduleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processEntry.th32ProcessID);
-        if (!Module32FirstW(moduleSnapshot, &moduleEntry))             //MODULEENTRY32
+        if (!Module32FirstW(moduleSnapshot, &moduleEntry))                //MODULEENTRY32
         {
             wcscpy_s((*vsThThreads)[i].wPath, L"-");
         }
@@ -412,7 +412,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
         //^^ integrity level; privileges; parent SID
     }
 
-    return 0;
+    return vsThThreads->size();
 }
 
 int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegrityLevel)
@@ -502,7 +502,6 @@ bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv,
 
     // memory
     PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
-    //DWORD RetLen, *pRetLen = NULL;
 
     // fill in buffer
     pPriv->PrivilegeCount = 1;
