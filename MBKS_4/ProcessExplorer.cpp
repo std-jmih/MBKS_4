@@ -103,8 +103,6 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
 {
     DWORD nlen;
     TOKEN_PRIVILEGES *pRez = NULL;
-    WCHAR wPrivilege[32];
-    DWORD dBufLen = 32;
     bool flag;
 
     if (Token == NULL)
@@ -116,6 +114,7 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
     {
         pRez = (TOKEN_PRIVILEGES *)new char[nlen];
+        SetLastError(0);
     }
     else
     {
@@ -134,6 +133,8 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
         for (unsigned int i = 0; i < pRez->PrivilegeCount; i++)
         {
             stPriv stPrTmp;
+            WCHAR wPrivilege[128] = { 0 };
+            DWORD dBufLen = 128;
 
             flag = true;
 
