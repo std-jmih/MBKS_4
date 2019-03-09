@@ -129,6 +129,8 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
     }
     else
     {
+        vwPrivileges->clear();
+
         for (unsigned int i = 0; i < pRez->PrivilegeCount; i++)
         {
             stPriv stPrTmp;
