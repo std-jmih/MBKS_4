@@ -6,6 +6,10 @@
 ProcessExplorer::ProcessExplorer()
 {
     setlocale(LC_CTYPE, ".866");
+    sThread tmp;
+    tmp.hProcessHandle = GetCurrentProcess();
+    SetProcessPrivilege(&tmp, L"SeDebugPrivilege", true);
+    CloseHandle(tmp.hProcessHandle);
 }
 
 ProcessExplorer::~ProcessExplorer()

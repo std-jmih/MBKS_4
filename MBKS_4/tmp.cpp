@@ -131,30 +131,30 @@ int main()
     ClassProc->GetThreads(&vThreads);
 
     int N = (int)vThreads.size();
-    for (int i = 160; i < N; i++)
+    for (int i = 0; i < N; i++)
     {
         wcout << i << endl <<
             L"Name:\t\t\t" << vThreads[i].wName << endl <<
-            //L"Type:\t\t\t"         << ((vThreads[i].bType) ? L"32" : L"64")    << endl <<
-            //L"PID:\t\t\t"          <<   vThreads[i].uiPID                      << endl <<
-            //L"Path:\t\t\t"         <<   vThreads[i].wPath                      << endl <<
-            //L"Parent user name:\t" <<   vThreads[i].wParentUserName            << endl <<
-            //L"Parent user SID:\t"  <<   vThreads[i].wParentUserSID             << endl <<
-            //L"Parent proc name:\t" <<   vThreads[i].wParentName                << endl <<
-            //L"Parent proc PID:\t"  <<   vThreads[i].uiParentPID                << endl <<
-            //L"Integrity level:\t"  <<   vThreads[i].iIntegrityLevel            << endl <<
-            //L"DEP:\t\t\t"          <<   vThreads[i].iDEP                       << endl <<
-            //L"ASLR: (-1 - error, 0 - disabled, 1 - enabled)"                                               << endl <<
-            //    L"\tBottom-up ASLR:                        "   << vThreads[i].iEnableBottomUpRandomization << endl <<
-            //    L"\tForced ASLR:                           "   << vThreads[i].iEnableForceRelocateImages   << endl <<
-            //    L"\tHigh enthropy:                         "   << vThreads[i].iEnableHighEntropy           << endl <<
-            //    L"\tForced ASLR with Required Relocations: "   << vThreads[i].iDisallowStrippedImages      << endl <<
+            L"Type:\t\t\t"         << ((vThreads[i].bType) ? L"32" : L"64")    << endl <<
+            L"PID:\t\t\t"          <<   vThreads[i].uiPID                      << endl <<
+            L"Path:\t\t\t"         <<   vThreads[i].wPath                      << endl <<
+            L"Parent user name:\t" <<   vThreads[i].wParentUserName            << endl <<
+            L"Parent user SID:\t"  <<   vThreads[i].wParentUserSID             << endl <<
+            L"Parent proc name:\t" <<   vThreads[i].wParentName                << endl <<
+            L"Parent proc PID:\t"  <<   vThreads[i].uiParentPID                << endl <<
+            L"Integrity level:\t"  <<   vThreads[i].iIntegrityLevel            << endl <<
+            L"DEP:\t\t\t"          <<   vThreads[i].iDEP                       << endl <<
+            L"ASLR: (-1 - error, 0 - disabled, 1 - enabled)"                                               << endl <<
+                L"\tBottom-up ASLR:                        "   << vThreads[i].iEnableBottomUpRandomization << endl <<
+                L"\tForced ASLR:                           "   << vThreads[i].iEnableForceRelocateImages   << endl <<
+                L"\tHigh enthropy:                         "   << vThreads[i].iEnableHighEntropy           << endl <<
+                L"\tForced ASLR with Required Relocations: "   << vThreads[i].iDisallowStrippedImages      << endl <<
             endl;
-        //wcout << L"DLLs:" << endl;
-        //for (int k = 0; k < vThreads[i].vwDLL.size(); k++)
-        //{
-        //    wcout << L"\t" << vThreads[i].vwDLL[k] << endl;
-        //}
+        wcout << L"DLLs:" << endl;
+        for (int k = 0; k < vThreads[i].vwDLL.size(); k++)
+        {
+            wcout << L"\t" << vThreads[i].vwDLL[k] << endl;
+        }
         wcout << L"Privileges: " << endl;
         for (int k = 0; k < vThreads[i].vwPrivileges.size(); k++)
         {
@@ -180,7 +180,7 @@ int main()
         }
         wcout << endl << endl;
 
-        //system("pause");
+        system("pause");
     }
 
     int k;
