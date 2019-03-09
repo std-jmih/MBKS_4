@@ -99,14 +99,18 @@ vector<stPriv>::iterator ProcessExplorer::unique(vector<stPriv>::iterator first,
     return ++result;
 }
 
-int ProcessExplorer::GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges)
+int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
 {
     DWORD nlen;
     TOKEN_PRIVILEGES *pRez = NULL;
     WCHAR wPrivilege[32];
     DWORD dBufLen = 32;
-    stPriv stPrTmp;
     bool flag;
+
+    if (Token == NULL)
+    {
+        return -1;
+    }
 
     GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
@@ -127,9 +131,11 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<st
     {
         for (unsigned int i = 0; i < pRez->PrivilegeCount; i++)
         {
+            stPriv stPrTmp;
+
             flag = true;
 
-            LookupPrivilegeNameW(lpSystemName, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
+            LookupPrivilegeNameW(NULL, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
 
             stPrTmp.wName = wPrivilege;
 
@@ -366,7 +372,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 
         //vv integrity level; privileges; parent SID
 
-        if (!OpenProcessToken(hProcess, TOKEN_QUERY, &tok))
+        if (!OpenProcessToken(hProcess, TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &tok))
         {
             (*vsThThreads)[i].iIntegrityLevel = -1; // <- integrity level
 
@@ -378,7 +384,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
         (*vsThThreads)[i].iIntegrityLevel = GetIntegrityLevel(tok);         // <- integrity level
 
         //GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges); // <- privileges
-        if (GetPrivileges(tok, pszServerName, &(*vsThThreads)[i].vwPrivileges) == -1)
+        if (GetPrivileges(tok, &(*vsThThreads)[i].vwPrivileges) == -1)
         {
             wcout << L"get priv err " << i << endl;
         }
@@ -540,4 +546,14 @@ void ProcessExplorer::Cleanup(vector<sThread> *vsThThreads)
         CloseHandle((*vsThThreads)[k].hProcessHandle);
     }
     vsThThreads->clear();
+}
+
+HANDLE ProcessExplorer::GetToken(HANDLE hProcess)
+{
+    HANDLE tok = 0;
+    if (!OpenProcessToken(hProcess, TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &tok))
+    {
+        return NULL;
+    }
+    return tok;
 }

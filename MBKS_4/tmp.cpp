@@ -16,19 +16,19 @@ int main()
 
     //    cout << ClassFile->GetFileIntegrityLevel(L"C:\\Users\\Public\\Projects\\test1.txt") << endl;
 
-    WCHAR user[64];
-    WCHAR pass[64] = L"123";
-    WCHAR sid[64];
-    WCHAR newuser[64] = L"test";
-    WCHAR file[128] = L"C:\\Users\\Public\\Projects\\test1.txt";
-    
-    ClassFile->GetFileOwner(user, sid, file);
-    wcout << user << endl << sid << endl << endl;
-    
-    ClassFile->SetFileOwner(newuser, file, pass);
-    
-    ClassFile->GetFileOwner(user, sid, file);
-    wcout << user << endl << sid << endl << endl;
+    //WCHAR user[64];
+    //WCHAR pass[64] = L"123";
+    //WCHAR sid[64];
+    //WCHAR newuser[64] = L"test";
+    //WCHAR file[128] = L"C:\\Users\\Public\\Projects\\test1.txt";
+    //
+    //ClassFile->GetFileOwner(user, sid, file);
+    //wcout << user << endl << sid << endl << endl;
+    //
+    //ClassFile->SetFileOwner(newuser, file, pass);
+    //
+    //ClassFile->GetFileOwner(user, sid, file);
+    //wcout << user << endl << sid << endl << endl;
 
     //while (1)
     //{
@@ -189,7 +189,7 @@ int main()
     WCHAR priv[32];
     wcin >> priv;
 
-    ClassProc->SetProcessPrivilege(&vThreads[k], priv, true);
+    ClassProc->SetProcessPrivilege(&vThreads[k], priv, false);
 
     ClassProc->GetThreads(&vThreads);
 

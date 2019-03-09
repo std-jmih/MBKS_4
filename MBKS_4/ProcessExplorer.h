@@ -8,14 +8,14 @@
 
 using namespace std;
 
-struct stPriv // if all boolean variables are "false" privilege is disabled
+struct stPriv
 {
     wstring         wName;                        // Privilege's name
-    bool            bDisabled;                     // 0 test
+    bool            bDisabled;                    // 0 (test)
     bool            bEnabled;                     // SE_PRIVILEGE_ENABLED
     bool            bEnabledByDefault;            // SE_PRIVILEGE_ENABLED_BY_DEFAULT
     bool            bUsedForAccess;               // SE_PRIVILEGE_USED_FOR_ACCESS
-    bool            bRemoved;                     // SE_PRIVILEGE_REMOVED // seems unnecessary
+    bool            bRemoved;                     // SE_PRIVILEGE_REMOVED
 };
 
 struct sThread
@@ -66,12 +66,14 @@ public:
 
     void Cleanup(vector<sThread> *vsThThreads);
 
+    HANDLE GetToken(HANDLE hProcess);
+
+    int GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges);
+
 private:
     PSID GetSid(LPWSTR wUsername);
 
     int GetIntegrityLevel(HANDLE Token);
-
-    int GetPrivileges(HANDLE Token, LPCWSTR lpSystemName, vector<stPriv> *vwPrivileges);
 
     vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last);
 };
