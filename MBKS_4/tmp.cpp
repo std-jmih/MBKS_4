@@ -13,22 +13,28 @@ int main()
     ProcessExplorer *ClassProc = new ProcessExplorer;
     FilesExplorer   *ClassFile = new FilesExplorer;
 
+    //for (int i = 0; i < ClassFile->vUsers.size(); i++)
+    //{
+    //    wcout << ClassFile->vUsers[i].wUsername << endl;
+    //    wcout << ClassFile->vUsers[i].wSID << endl << endl;
+    //}
+
 
     //    cout << ClassFile->GetFileIntegrityLevel(L"C:\\Users\\Public\\Projects\\test1.txt") << endl;
 
-    WCHAR user[64];
-    WCHAR pass[64] = L"123";
-    WCHAR sid[64];
-    WCHAR newuser[64] = L"test";
-    WCHAR file[128] = L"C:\\Users\\Public\\Projects\\test1.txt";
-    
-    ClassFile->GetFileOwner(user, sid, file);
-    wcout << user << endl << sid << endl << endl;
-    
-    ClassFile->SetFileOwner(newuser, file, pass);
-    
-    ClassFile->GetFileOwner(user, sid, file);
-    wcout << user << endl << sid << endl << endl;
+    //WCHAR user[64];
+    //WCHAR pass[64] = L"123";
+    //WCHAR sid[64];
+    //WCHAR newuser[64] = L"test";
+    //WCHAR file[128] = L"C:\\Users\\Public\\Projects\\test1.txt";
+    //
+    //ClassFile->GetFileOwner(user, sid, file);
+    //wcout << user << endl << sid << endl << endl;
+    //
+    //ClassFile->SetFileOwner(newuser, file, pass);
+    //
+    //ClassFile->GetFileOwner(user, sid, file);
+    //wcout << user << endl << sid << endl << endl;
 
     //while (1)
     //{
@@ -42,7 +48,7 @@ int main()
 
 
     //vector<stACE> vACL;
-
+    //
     //ClassFile->GetACL(&vACL, L"C:\\Users\\Public\\Projects\\test1.txt");
     //
     //for (int k = 0; k < vACL.size(); k++)
@@ -62,7 +68,9 @@ int main()
     //        wcout << L"ObjectInheritAce" << endl;
     //    if (vACL[k].stFlags.SuccessfulAccessAceFlag)
     //        wcout << L"SuccessfulAccessAceFlag" << endl;
-    //    wcout << vACL[k].wSID << endl << endl;
+    //    wcout << 
+    //        vACL[k].wSID << endl <<
+    //        vACL[k].wUsername << endl << endl;
     //}
     //vACL.clear();
 

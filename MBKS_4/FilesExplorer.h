@@ -44,11 +44,20 @@ struct stACE
     // SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE   | 0xF
     // SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE   | 0x10
     // SYSTEM_MANDATORY_LABEL_ACE_TYPE         | 0x11
-    int        iAceType;  // Specifies the ACE type. One value
+    int        iAceType;         // Specifies the ACE type. One value
 
-    stAceFlags stFlags;   // Specifies a set of ACE type-specific control flags. Combination of values
+    stAceFlags stFlags;          // Specifies a set of ACE type-specific control flags. Combination of values
 
-    WCHAR      wSID[512]; // SID
+    WCHAR      wSID[512];        // SID
+
+    WCHAR      wUsername[512];   // Name
+};
+
+struct stUser
+{
+    WCHAR      wSID[512];        // SID
+
+    WCHAR      wUsername[512];   // Name
 };
 
 class FilesExplorer
@@ -70,6 +79,10 @@ public:
     int SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword);
 
     int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
+
+    bool GetUsers(vector<stUser> *vectUsers);
+
+    vector<stUser> vUsers;
 
 private:
     bool SetPrivileges(HANDLE hCurrentProcess);

@@ -5,13 +5,22 @@
 #include <sddl.h>
 #include "accctrl.h"
 #include "aclapi.h"
+#include <lm.h>
+#include <ntsecapi.h> 
+
+#pragma comment(lib, "netapi32.lib")
 
 FilesExplorer::FilesExplorer()
 {
+    if (!GetUsers(&vUsers))
+    {
+        SetLastError(ERROR_ACCESS_DENIED);
+    }
 }
 
 FilesExplorer::~FilesExplorer()
 {
+    vUsers.clear();
 }
 
 bool FilesExplorer::SetPrivileges(HANDLE hCurrentProcess)
@@ -201,6 +210,60 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
     return ERROR_SUCCESS;
 }
 
+bool FilesExplorer::GetUsers(vector<stUser> *vectUsers)
+{
+    LPUSER_INFO_0 pBuf = NULL;
+    LPUSER_INFO_0 pTmpBuf;
+    LPUSER_INFO_4 pTmpBuf1;
+    NET_API_STATUS nStatus;
+    DWORD dwEntriesRead = 0;
+    DWORD dwTotalEntries = 0;
+    DWORD dwResumeHandle = 0;
+
+    LPWSTR pSID = NULL;
+
+    nStatus = NetUserEnum(
+        NULL,
+        0,
+        FILTER_NORMAL_ACCOUNT,
+        (LPBYTE *)&pBuf,
+        MAX_PREFERRED_LENGTH,
+        &dwEntriesRead,
+        &dwTotalEntries,
+        &dwResumeHandle);
+
+    if ((nStatus == NERR_Success) || (nStatus == ERROR_MORE_DATA))
+    {
+        pTmpBuf = pBuf;
+        for (unsigned int i = 0; i < dwEntriesRead; i++)
+        {
+            stUser tmp;
+
+            if (pTmpBuf == NULL)
+            {
+                printf("An access violation has occurred\n");
+                return false;
+            }
+
+            NetUserGetInfo(
+                NULL,
+                pTmpBuf->usri0_name,
+                4, //-V112
+                (LPBYTE *)&pTmpBuf1);
+
+            ConvertSidToStringSidW(pTmpBuf1->usri4_user_sid, &pSID);
+
+            wcscpy(tmp.wSID, pSID);
+            wcscpy(tmp.wUsername, pTmpBuf1->usri4_name);
+
+            vUsers->push_back(tmp);
+
+            pTmpBuf++;
+        }
+    }
+    return true;
+}
+
 int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
 {
     if (chDirName == NULL)
@@ -221,6 +284,13 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
     DWORD dwLength;                   // длина дескриптора безопасности
     DWORD dwLengthAllocated;
     DWORD dwRetCode;                  // код возврата
+
+    WCHAR wUser[512];
+    DWORD dwUserLen;
+    WCHAR wDomain[512];
+    DWORD dwDomainLen;
+    SID_NAME_USE eSidNameUse;
+    DWORD dwStatus;
 
     // получаем длину дескриптора безопасности
     if (!GetFileSecurityW(
@@ -272,9 +342,6 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
         return 0;
     }
 
-    // печатаем количество элементов
-    //printf("Ace count: %u\n", lpDacl->AceCount);
-
     stACE tmp;
 
     // получаем элементы списка DACL
@@ -285,22 +352,38 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
             i,       // индекс элемента
             &lpAce)) // указатель на элемент списка
         {
-            //dwRetCode = GetLastError();
-            //return dwRetCode;
             continue;
         }
+
+        dwUserLen = 0;
 
         // преобразуем SID в строку
         if (!ConvertSidToStringSidW(&((ACCESS_ALLOWED_ACE *)lpAce)->SidStart, &StringSid))
         {
-            //dwRetCode = GetLastError();
-            //return dwRetCode;
             wcscpy_s(tmp.wSID, L"-");
+            wcscpy_s(tmp.wUsername, L"-");
         }
         else
         {
-            //printf("%s\n", StringSid);
             wcscpy_s(tmp.wSID, StringSid);
+
+            dwUserLen = 512;
+            dwDomainLen = 512;
+            if (LookupAccountSidW(
+                NULL,
+                &((ACCESS_ALLOWED_ACE *)lpAce)->SidStart,
+                wUser,
+                &dwUserLen,
+                wDomain,
+                &dwDomainLen,
+                &eSidNameUse))
+            {
+                wcscpy_s(tmp.wUsername, wUser);
+            }
+            else
+            {
+                wcscpy_s(tmp.wUsername, L"-");
+            }
         }
         LocalFree(StringSid);
 
