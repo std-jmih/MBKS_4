@@ -427,7 +427,7 @@ bool FilesExplorer::SetFileIntegrityLevel(int level, LPCWSTR FileName)
     return false;
 }
 
-bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask)
+int FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask)
 {
     ACL *lpOldDacl = NULL;             // указатель на старый DACL
     ACL *lpNewDacl = NULL;             // указатель на новый DACL
@@ -596,7 +596,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     }
     default:
     {
-        return false;
+        return -1;
     }
     }
 
