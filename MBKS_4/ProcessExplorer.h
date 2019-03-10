@@ -58,7 +58,7 @@ public:
 
     ~ProcessExplorer();
 
-    int GetThreads(vector<sThread> *vsThThreads);
+    size_t GetThreads(vector<sThread> *vsThThreads);
 
     int SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegrityLevel);
 
@@ -74,6 +74,4 @@ private:
     PSID GetSid(LPWSTR wUsername);
 
     int GetIntegrityLevel(HANDLE Token);
-
-    vector<stPriv>::iterator unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last);
 };

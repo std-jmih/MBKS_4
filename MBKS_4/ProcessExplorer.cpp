@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include "ProcessExplorer.h"
 #include <string.h>
 #include <sddl.h>
@@ -38,13 +41,13 @@ PSID ProcessExplorer::GetSid(LPWSTR wUsername)
         dwErrCode = GetLastError();
         if (dwErrCode == ERROR_INSUFFICIENT_BUFFER)
         {
-            lpSID = (SID *) new char[dwLengthOfSID];
-            lpDomainName = (LPWSTR) new wchar_t[dwLengthOfDomainName];
+            lpSID = (SID *) malloc((size_t)dwLengthOfSID);
+            lpDomainName = (LPWSTR) malloc((size_t)dwLengthOfDomainName * sizeof(WCHAR));
         }
         else
         {
             printf("Lookup account name failed.\n");
-            printf("Error code: %d\n", dwErrCode);
+            printf("Error code: %u\n", dwErrCode);
         }
     }
 
@@ -59,10 +62,10 @@ PSID ProcessExplorer::GetSid(LPWSTR wUsername)
     {
         dwErrCode = GetLastError();
         printf("Lookup account name failed.\n");
-        printf("Error code: %d\n", dwErrCode);
+        printf("Error code: %u\n", dwErrCode);
     }
 
-    delete[] lpDomainName;
+    free(lpDomainName);
 
     return lpSID;
 }
@@ -72,7 +75,7 @@ int ProcessExplorer::GetIntegrityLevel(HANDLE Token)
     DWORD nlen;
     DWORD SidSubAuthority;
     TOKEN_MANDATORY_LABEL *pRez;
-    char buf[28];
+    alignas(TOKEN_MANDATORY_LABEL) char buf[32];
     pRez = (TOKEN_MANDATORY_LABEL *)buf;
 
     if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, pRez, 28, &nlen))
@@ -84,23 +87,6 @@ int ProcessExplorer::GetIntegrityLevel(HANDLE Token)
         SidSubAuthority = *GetSidSubAuthority(pRez->Label.Sid, 0);
         return SidSubAuthority;
     }
-}
-
-vector<stPriv>::iterator ProcessExplorer::unique(vector<stPriv>::iterator first, vector<stPriv>::iterator last)
-{
-    if (first == last)
-    {
-        return last;
-    }
-    vector<stPriv>::iterator result = first;
-    while (++first != last)
-    {
-        if (!(result->wName == first->wName))
-        {
-            *(++result) = *first;
-        }
-    }
-    return ++result;
 }
 
 int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
@@ -117,7 +103,11 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
     GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, 0, &nlen);
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
     {
-        pRez = (TOKEN_PRIVILEGES *)new char[nlen];
+        pRez = (TOKEN_PRIVILEGES *)malloc((size_t)nlen);
+        if (pRez == NULL)
+        {
+            return -1;
+        }
         SetLastError(0);
     }
     else
@@ -127,7 +117,7 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
 
     if (!GetTokenInformation(Token, TOKEN_INFORMATION_CLASS::TokenPrivileges, pRez, nlen, &nlen))
     {
-        delete[] pRez;
+        free(pRez);
         return -1;
     }
     else
@@ -142,7 +132,10 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
 
             flag = true;
 
-            LookupPrivilegeNameW(NULL, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen);
+            if (!LookupPrivilegeNameW(NULL, &pRez->Privileges[i].Luid, wPrivilege, &dBufLen))
+            {
+                continue;
+            }
 
             stPrTmp.wName = wPrivilege;
 
@@ -191,18 +184,13 @@ int ProcessExplorer::GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges)
             vwPrivileges->push_back(stPrTmp);
         }
 
-        delete[] pRez;
-
-        //vv privileges fix
-        //vector<stPriv>::iterator iter = unique((*vwPrivileges).begin(), (*vwPrivileges).end());
-        //(*vwPrivileges).erase(iter, (*vwPrivileges).end());
-        //^^ privileges fix
+        free(pRez);
 
         return 0;
     }
 }
 
-int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
+size_t ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 {
     Cleanup(vsThThreads);
 
@@ -217,11 +205,6 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
         return -1;
     }
 
-    if (processSnapshot == INVALID_HANDLE_VALUE)
-    {
-        return -1;
-    }
-
     processEntry.dwSize = sizeof(PROCESSENTRY32W);
     moduleEntry.dwSize = sizeof(MODULEENTRY32W);
 
@@ -231,7 +214,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     }
 
     sThread tmp;
-    int i = 0;
+    size_t i = 0;
     do // Walk the snapshot of processes
     {
         (*vsThThreads).push_back(tmp);
@@ -272,7 +255,8 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     TOKEN_USER *ptu;
     HANDLE tok = 0;
     DWORD nlen, dlen;
-    WCHAR name[512], dom[512], tubuf[512], *pret = 0;
+    WCHAR name[512], dom[512], *pret = 0;
+    alignas(TOKEN_USER) WCHAR tubuf[512];
     int iUse;
 
     LPWSTR pSID = NULL;
@@ -285,7 +269,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     PROCESS_MITIGATION_DEP_POLICY stDEP;
     PROCESS_MITIGATION_ASLR_POLICY stASLR;
 
-    for (int i = 0; i < (*vsThThreads).size(); i++)
+    for (size_t i = 0; i < (*vsThThreads).size(); i++)
     {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (*vsThThreads)[i].uiPID);
 
@@ -298,7 +282,7 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
 
         //vv parents
         flag = false;
-        for (int j = 0; j < (*vsThThreads).size(); j++)
+        for (size_t j = 0; j < (*vsThThreads).size(); j++)
         {
             if ((*vsThThreads)[j].uiPID == (*vsThThreads)[i].uiParentPID)
             {
@@ -416,12 +400,19 @@ int ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
         }
 
         lpSID = GetSid(name);
-        ConvertSidToStringSidW(lpSID, &pSID);
-        delete[] lpSID;
-        lpSID = NULL;
-
-        wcscpy_s((*vsThThreads)[i].wParentUserSID, pSID);
+        if (lpSID != NULL)
+        {
+            ConvertSidToStringSidW(lpSID, &pSID);
+            free(lpSID);
+            lpSID = NULL;
+            wcscpy_s((*vsThThreads)[i].wParentUserSID, pSID);
+        }
+        else
+        {
+            wcscpy_s((*vsThThreads)[i].wParentUserSID, L"-");
+        }
         wcscpy_s((*vsThThreads)[i].wParentUserName, name);
+
         //^^ integrity level; privileges; parent SID
     }
 
@@ -489,7 +480,11 @@ int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegri
         return dStatus;
     }
 
-    sLabel = (TOKEN_MANDATORY_LABEL *)malloc(sLabelSize);
+    sLabel = (TOKEN_MANDATORY_LABEL *)malloc((size_t)sLabelSize);
+    if (sLabel == NULL)
+    {
+        return -1;
+    }
 
     if (!GetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize, &sLabelSize))
     {
@@ -499,7 +494,11 @@ int ProcessExplorer::SetProcessIntegrityLevel(sThread *sProcess, int iNewIntegri
 
     ConvertStringSidToSidW(lpSID, &(sLabel->Label.Sid));
 
-    SetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize);
+    if (!SetTokenInformation(tok, TOKEN_INFORMATION_CLASS::TokenIntegrityLevel, sLabel, sLabelSize))
+    {
+        free(sLabel);
+        return GetLastError();
+    }
 
     free(sLabel);
     return 0;
@@ -546,7 +545,7 @@ bool ProcessExplorer::SetProcessPrivilege(sThread *sProcess, const WCHAR *wPriv,
 
 void ProcessExplorer::Cleanup(vector<sThread> *vsThThreads)
 {
-    for (int k = 0; k < vsThThreads->size(); k++)
+    for (size_t k = 0; k < vsThThreads->size(); k++)
     {
         (*vsThThreads)[k].vwDLL.clear();
         (*vsThThreads)[k].vwPrivileges.clear();

@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include "FilesExplorer.h"
 #include <sddl.h>
 #include "accctrl.h"
@@ -15,10 +18,12 @@ bool FilesExplorer::SetPrivileges(HANDLE hCurrentProcess)
 {
     HANDLE hTok = 0;
 
-    size_t sz = sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES);
-
     // memory
-    PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)_alloca(sz);
+    PTOKEN_PRIVILEGES pPriv = (PTOKEN_PRIVILEGES)malloc(offsetof(TOKEN_PRIVILEGES, Privileges) + 2 * sizeof(LUID_AND_ATTRIBUTES));
+    if (pPriv == NULL)
+    {
+        return false;
+    }
 
     // fill in buffer
     pPriv->PrivilegeCount = 2;
@@ -70,13 +75,13 @@ PSID FilesExplorer::GetSid(LPWSTR wUsername)
         dwErrCode = GetLastError();
         if (dwErrCode == ERROR_INSUFFICIENT_BUFFER)
         {
-            lpSID = (SID *) new char[dwLengthOfSID];
-            lpDomainName = (LPWSTR) new wchar_t[dwLengthOfDomainName];
+            lpSID = (SID *)malloc((size_t)dwLengthOfSID);
+            lpDomainName = (LPWSTR)malloc((size_t)dwLengthOfDomainName * sizeof(WCHAR));
         }
         else
         {
             printf("Lookup account name failed.\n");
-            printf("Error code: %d\n", dwErrCode);
+            printf("Error code: %u\n", dwErrCode);
         }
     }
 
@@ -91,10 +96,10 @@ PSID FilesExplorer::GetSid(LPWSTR wUsername)
     {
         dwErrCode = GetLastError();
         printf("Lookup account name failed.\n");
-        printf("Error code: %d\n", dwErrCode);
+        printf("Error code: %u\n", dwErrCode);
     }
 
-    delete[] lpDomainName;
+    free(lpDomainName);
 
     return lpSID;
 }
@@ -183,8 +188,8 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
 
     // Copy AcctName to wUsername
 #pragma warning (disable: 4996)
-    wcsncpy(wUsername, AcctName, dwAcctName);
-    wUsername[dwAcctName] = L'\0';
+    wcsncpy(wUsername, AcctName, (size_t)dwAcctName);
+    wUsername[(size_t)dwAcctName] = L'\0';
 
     // Copy string SID to result buffer
     LPWSTR p = NULL;
@@ -214,6 +219,7 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
     LPWSTR StringSid;                 // указатель на строку SID
 
     DWORD dwLength;                   // длина дескриптора безопасности
+    DWORD dwLengthAllocated;
     DWORD dwRetCode;                  // код возврата
 
     // получаем длину дескриптора безопасности
@@ -234,7 +240,8 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
     }
 
     // распределяем память для дескриптора безопасности
-    lpSd = (PSECURITY_DESCRIPTOR) new char[dwLength];
+    lpSd = (PSECURITY_DESCRIPTOR) malloc((size_t)dwLength);
+    dwLengthAllocated = dwLength;
 
     // читаем дескриптор безопасности
     if (!GetFileSecurityW(
@@ -335,7 +342,7 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
     }
 
     // освобождаем память
-    delete[] lpSd;
+    free(lpSd);
 
     return 0;
 }
@@ -422,8 +429,8 @@ bool FilesExplorer::SetFileIntegrityLevel(int level, LPCWSTR FileName)
 
 bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask)
 {
-    ACL *lpOldDacl;                    // указатель на старый DACL
-    ACL *lpNewDacl;                    // указатель на новый DACL
+    ACL *lpOldDacl = NULL;             // указатель на старый DACL
+    ACL *lpNewDacl = NULL;             // указатель на новый DACL
     LPVOID lpAce;                      // указатель на элемент ACE
 
     DWORD dwDaclLength         = 0;    // длина DACL
@@ -455,12 +462,12 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
 
         if (dwRetCode == ERROR_INSUFFICIENT_BUFFER)
         {
-            lpSd = (SECURITY_DESCRIPTOR *) new char[dwSdLength]; // распределяем память для буфера
+            lpSd = (SECURITY_DESCRIPTOR *) malloc((size_t)dwSdLength); // распределяем память для буфера
         }
         else
         {
             printf("Get file security failed.\n");
-            printf("Error code: %d\n", dwRetCode);
+            printf("Error code: %u\n", dwRetCode);
 
             return dwRetCode;
         }
@@ -476,7 +483,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Get file security failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -496,14 +503,14 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
         if (dwRetCode == ERROR_INSUFFICIENT_BUFFER)
         {
             // распределяем память для SID
-            lpSid        = (SID *)  new char[dwSidLength];
-            lpDomainName = (LPWSTR) new wchar_t[dwLengthOfDomainName];
+            lpSid        = (SID *)  malloc((size_t)dwSidLength);
+            lpDomainName = (LPWSTR) malloc((size_t)dwLengthOfDomainName * sizeof(WCHAR));
         }
         else
         {
             // выходим из программы
             printf("Lookup account name failed.\n");
-            printf("Error code: %d\n", dwRetCode);
+            printf("Error code: %u\n", dwRetCode);
 
             return dwRetCode;
         }
@@ -522,7 +529,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
         dwRetCode = GetLastError();
 
         printf("Lookup account name failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -536,16 +543,20 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Get security descriptor DACL failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
 
     // определяем длину нового DACL
-    dwDaclLength = lpOldDacl->AclSize + sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD) + dwSidLength;
+    dwDaclLength = (DWORD)(lpOldDacl->AclSize + sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD) + (size_t)dwSidLength);
 
     // распределяем память под новый DACL
-    lpNewDacl = (ACL *)new char[dwDaclLength];
+    lpNewDacl = (ACL *)malloc((size_t)dwDaclLength);
+    if (lpNewDacl == NULL)
+    {
+        return -1;
+    }
 
     // инициализируем новый DACL
     if (!InitializeAcl(
@@ -556,7 +567,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
         dwRetCode = GetLastError();
 
         printf("Lookup account name failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -608,7 +619,7 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
         dwRetCode = GetLastError();
 
         printf("Get ace failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -617,11 +628,11 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     if (bDaclPresent)
     {
         if (!AddAce(
-            lpNewDacl,                          // адрес нового DACL
-            ACL_REVISION,                       // версия DACL
-            MAXDWORD,                           // добавляем в конец списка
-            lpAce,                              // адрес старого DACL
-            lpOldDacl->AclSize - sizeof(ACL)))  // длина старого DACL
+            lpNewDacl,                                   // адрес нового DACL
+            ACL_REVISION,                                // версия DACL
+            MAXDWORD,                                    // добавляем в конец списка
+            lpAce,                                       // адрес старого DACL
+            (DWORD)(lpOldDacl->AclSize - sizeof(ACL))))  // длина старого DACL
         {
             dwRetCode = GetLastError();
             perror("Add access allowed ace failed.\n");
@@ -684,16 +695,16 @@ bool FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Set file security failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
 
     // освобождаем память
-    delete[] lpSd;
-    delete[] lpSid;
-    delete[] lpDomainName;
-    delete[] lpNewDacl;
+    free(lpSd);
+    free(lpSid);
+    free(lpDomainName);
+    free(lpNewDacl);
 
     return 0;
 }
@@ -721,23 +732,18 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
 
-        if (dwRetCode == ERROR_INSUFFICIENT_BUFFER)
-        {
-            // распределяем память для буфера
-            lpSd = (SECURITY_DESCRIPTOR *) new WCHAR[dwLength];
-        }
-        else
+        if (dwRetCode != ERROR_INSUFFICIENT_BUFFER)
         {
             // выходим из программы
             printf("Get file security failed.\n");
-            printf("Error code: %d\n", dwRetCode);
+            printf("Error code: %u\n", dwRetCode);
 
             return dwRetCode;
         }
     }
 
     // распределяем память для дескриптора безопасности
-    lpSd = (PSECURITY_DESCRIPTOR) new WCHAR[dwLength];
+    lpSd = (PSECURITY_DESCRIPTOR)malloc((size_t)dwLength * sizeof(WCHAR));
 
     // читаем дескриптор безопасности
     if (!GetFileSecurityW(
@@ -749,7 +755,7 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Get file security failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -763,7 +769,7 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Get security descriptor DACL failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
@@ -787,7 +793,7 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
         {
             dwRetCode = GetLastError();
             printf("Get ace failed.\n");
-            printf("Error code: %d\n", dwRetCode);
+            printf("Error code: %u\n", dwRetCode);
 
             return dwRetCode;
         }
@@ -799,7 +805,7 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
             {
                 dwRetCode = GetLastError();
                 printf("Delete ace failed.\n");
-                printf("Error code: %d\n", dwRetCode);
+                printf("Error code: %u\n", dwRetCode);
 
                 return dwRetCode;
             }
@@ -813,13 +819,13 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     {
         dwRetCode = GetLastError();
         printf("Set file security failed.\n");
-        printf("Error code: %d\n", dwRetCode);
+        printf("Error code: %u\n", dwRetCode);
 
         return dwRetCode;
     }
 
     // освобождаем память
-    delete[] lpSd;
+    free(lpSd);
 
     return 0;
 }
@@ -837,6 +843,7 @@ int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPass
     HANDLE hCurrentProc = GetCurrentProcess();
     if (!SetPrivileges(hCurrentProc))
     {
+        free(pSid);
         return -1;
     }
 
@@ -850,8 +857,10 @@ int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPass
         NULL);
     if(status != ERROR_SUCCESS)
     {
+        free(pSid);
         return -1;
     }
 
+    free(pSid);
     return 0;
 }
