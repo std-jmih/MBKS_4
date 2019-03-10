@@ -256,7 +256,7 @@ bool FilesExplorer::GetUsers(vector<stUser> *vectUsers)
             wcscpy(tmp.wSID, pSID);
             wcscpy(tmp.wUsername, pTmpBuf1->usri4_name);
 
-            vUsers->push_back(tmp);
+            vUsers.push_back(tmp);
 
             pTmpBuf++;
         }

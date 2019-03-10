@@ -66,19 +66,19 @@ public:
     FilesExplorer();
     ~FilesExplorer();
 
-    int GetACL(vector<stACE> *vACEs, const WCHAR *chDirName);
+    int  GetACL(vector<stACE> *vACEs, const WCHAR *chDirName);
 
-    int GetFileIntegrityLevel(LPCWSTR FileName);
+    int  GetFileIntegrityLevel(LPCWSTR FileName);
 
     bool SetFileIntegrityLevel(int level, LPCWSTR FileName);
 
-    int AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask); // wchUserName - user which will be added to acl
+    int  AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType, DWORD dAccessMask); // wchUserName - user which will be added to acl
 
     bool DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType);
 
-    int SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword);
+    int  SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword);
 
-    int GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
+    int  GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 
     bool GetUsers(vector<stUser> *vectUsers);
 
