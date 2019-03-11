@@ -3,6 +3,7 @@
 #include <vector>
 #include <Windows.h>
 
+#define MAX_COMPUTERNAME_LENGTH_MY 128
 
 using namespace std;
 

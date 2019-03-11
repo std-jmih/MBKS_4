@@ -262,8 +262,8 @@ size_t ProcessExplorer::GetThreads(vector<sThread> *vsThThreads)
     LPWSTR pSID = NULL;
     PSID   lpSID = NULL;
     DWORD  dSize = 512;
-    DWORD  len = MAX_COMPUTERNAME_LENGTH;
-    WCHAR  pszServerName[MAX_COMPUTERNAME_LENGTH];
+    DWORD  len = MAX_COMPUTERNAME_LENGTH_MY;
+    WCHAR  pszServerName[MAX_COMPUTERNAME_LENGTH_MY];
     GetComputerNameW(pszServerName, &len);
 
     PROCESS_MITIGATION_DEP_POLICY stDEP;

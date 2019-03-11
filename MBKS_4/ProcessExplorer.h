@@ -5,6 +5,7 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 
+#define MAX_COMPUTERNAME_LENGTH_MY 128
 
 using namespace std;
 

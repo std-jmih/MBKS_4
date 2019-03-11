@@ -118,14 +118,14 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
     DWORD dwRtnCode = 0;
     PSID pSidOwner = NULL;
     BOOL bRtnBool = TRUE;
-    WCHAR AcctName[MAX_COMPUTERNAME_LENGTH];
-    DWORD dwAcctName = MAX_COMPUTERNAME_LENGTH;
+    WCHAR AcctName[MAX_COMPUTERNAME_LENGTH_MY];
+    DWORD dwAcctName = MAX_COMPUTERNAME_LENGTH_MY;
     SID_NAME_USE eUse = SidTypeUnknown;
     HANDLE hFile;
     PSECURITY_DESCRIPTOR pSD = NULL;
 
-    DWORD  dwDomainName = MAX_COMPUTERNAME_LENGTH;
-    WCHAR  DomainName[MAX_COMPUTERNAME_LENGTH];
+    DWORD  dwDomainName = MAX_COMPUTERNAME_LENGTH_MY;
+    WCHAR  DomainName[MAX_COMPUTERNAME_LENGTH_MY];
     GetComputerNameW(DomainName, &dwDomainName);
 
     // Get the handle of the file object.
