@@ -116,13 +116,13 @@ PSID FilesExplorer::GetSid(LPWSTR wUsername)
 int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName)
 {
     DWORD dwRtnCode = 0;
-    PSID pSidOwner;
+    PSID pSidOwner = NULL;
     BOOL bRtnBool = TRUE;
     WCHAR AcctName[MAX_COMPUTERNAME_LENGTH];
     DWORD dwAcctName = MAX_COMPUTERNAME_LENGTH;
     SID_NAME_USE eUse = SidTypeUnknown;
     HANDLE hFile;
-    PSECURITY_DESCRIPTOR pSD;
+    PSECURITY_DESCRIPTOR pSD = NULL;
 
     DWORD  dwDomainName = MAX_COMPUTERNAME_LENGTH;
     WCHAR  DomainName[MAX_COMPUTERNAME_LENGTH];
@@ -144,12 +144,6 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
         return GetLastError();
     }
 
-    // Allocate memory for the SID structure.
-    pSidOwner = (PSID)GlobalAlloc(GMEM_FIXED, sizeof(PSID));
-
-    // Allocate memory for the security descriptor structure.
-    pSD = (PSECURITY_DESCRIPTOR)GlobalAlloc(GMEM_FIXED, sizeof(PSECURITY_DESCRIPTOR));
-
     // Get the owner SID of the file.
     dwRtnCode = GetSecurityInfo(
         hFile,
@@ -164,6 +158,7 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
     // Check GetLastError for GetSecurityInfo error condition.
     if (dwRtnCode != ERROR_SUCCESS)
     {
+        LocalFree(pSD);
         CloseHandle(hFile);
         return GetLastError();
     }
@@ -191,6 +186,7 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
   // Check GetLastError for LookupAccountSid error condition.
     if (bRtnBool == FALSE)
     {
+        LocalFree(pSD);
         CloseHandle(hFile);
         return GetLastError();
     }
@@ -204,8 +200,9 @@ int FilesExplorer::GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDi
     LPWSTR p = NULL;
     ConvertSidToStringSidW(pSidOwner, &p);
     wcscpy(wSID, p);
-    LocalFree(p);
 
+    LocalFree(p);
+    LocalFree(pSD);
     CloseHandle(hFile);
     return ERROR_SUCCESS;
 }

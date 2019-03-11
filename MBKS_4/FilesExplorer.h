@@ -80,11 +80,11 @@ public:
 
     int  GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 
-    bool GetUsers(vector<stUser> *vectUsers);
-
     vector<stUser> vUsers;
 
 private:
+    bool GetUsers(vector<stUser> *vectUsers);
+
     bool SetPrivileges(HANDLE hCurrentProcess);
 
     PSID GetSid(LPWSTR wUsername);
