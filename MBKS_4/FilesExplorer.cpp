@@ -910,7 +910,7 @@ bool FilesExplorer::DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName
     return 0;
 }
 
-int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword)
+int FilesExplorer::SetFileOwner(WCHAR *wUsername, WCHAR *chDirName)
 {
     PSID pSid = NULL;
 

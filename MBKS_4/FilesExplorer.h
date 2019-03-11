@@ -77,7 +77,7 @@ public:
 
     bool DelFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName, int iAceType);
 
-    int  SetFileOwner(WCHAR *wUsername, WCHAR *chDirName, WCHAR *wPassword);
+    int  SetFileOwner(WCHAR *wUsername, WCHAR *chDirName);
 
     int  GetFileOwner(WCHAR *wUsername, WCHAR *wSID, const WCHAR *chDirName);
 
