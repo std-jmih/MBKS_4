@@ -269,6 +269,8 @@ int FilesExplorer::GetACL(vector<stACE> *vACEs, const WCHAR *chDirName)
         return ERROR_INVALID_NAME;
     }
 
+    vACEs->clear();
+
     PSECURITY_DESCRIPTOR lpSd = NULL; // указатель на SD
 
     PACL lpDacl = NULL;               // указатель на список управления доступом
