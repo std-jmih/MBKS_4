@@ -71,8 +71,8 @@ public:
 
     int GetPrivileges(HANDLE Token, vector<stPriv> *vwPrivileges);
 
+    int GetIntegrityLevel(HANDLE Token);
+
 private:
     PSID GetSid(LPWSTR wUsername);
-
-    int GetIntegrityLevel(HANDLE Token);
 };
