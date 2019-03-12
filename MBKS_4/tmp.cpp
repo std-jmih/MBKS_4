@@ -8,6 +8,8 @@
 #include <sddl.h>
 using namespace std;
 
+
+
 int main()
 {
     ProcessExplorer *ClassProc = new ProcessExplorer;
@@ -39,6 +41,8 @@ int main()
     {
     
     }
+
+
 
     //WCHAR wName[512];
     //WCHAR wSID[512];

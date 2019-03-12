@@ -660,7 +660,7 @@ int FilesExplorer::AddFileAcl(const WCHAR *wchDirName, const WCHAR *wchUserName,
     {
     case ACCESS_ALLOWED_ACE_TYPE:
     {
-        bStatus = AddAccessDeniedAce(
+        bStatus = AddAccessAllowedAce(
             lpNewDacl,                   // адрес DACL
             ACL_REVISION,                // версия DACL
             dAccessMask,                 // access mask
